@@ -1,7 +1,16 @@
 <template>
+
+
+
     <div class="container mx-auto p-4 max-w-full">
       <h1 class="text-3xl font-bold mb-6 text-center">Link Saver</h1>
-  
+      <div class="auth-container">
+  <div class="google-signup-wrapper">
+    <google_signup v-if="!accessToken" class="google-signup" />
+  </div>
+  <face3 v-if="accessToken" class="face" />
+</div>
+
       <!-- Centered and Reduced Width Paste URL Bar -->
       <div class="mb-6 flex justify-center">
         <div class="relative w-full max-w-lg">
@@ -361,7 +370,7 @@ const getToken = () => {
     return tokenCookie.split("=")[1]
   } else {
     console.error("Access token not found in cookies")
-    error.value = "Authentication error. Please log in again."
+    error.value = "Authentication error. Please log in and try again."
     return null
   }
 }
@@ -730,6 +739,27 @@ const sortedAndFilteredLinks = computed(() => {
 definePageMeta({
   colorMode: "light", // or 'dark'
 });
+
+
+const accessToken = ref(null);
+
+const fetchAccessToken = () => {
+  const token = document.cookie
+    .split('; ')
+    .find(row => row.startsWith('access_token'))
+    ?.split('=')[1];
+
+  if (token) {
+    accessToken.value = token;
+  } else {
+    console.error('Access token not found in cookies');
+  }
+};
+
+onMounted(() => {
+  fetchAccessToken();
+});
+
 </script>
 
 <style scoped>
@@ -768,4 +798,34 @@ definePageMeta({
   break-inside: avoid;
   margin-bottom: 1rem;
 }
+
+
+.face {
+  width: 35px; /* Reduced size of the profile picture */
+  height: 35px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+
+.auth-container {
+  position: relative;
+
+}
+
+.google-signup-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+
+
+.face {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
 </style>
