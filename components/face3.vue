@@ -1,13 +1,13 @@
 <template>
     <div class="container">
-      <a href="/pp">
+ 
         <UAvatar
           :src="profilePicture"
           alt="Avatar"
           size="lg"
           class="avatar"
           chip-position="top-right"
-      /></a>
+      />
   
       <!-- <img  alt="Profile Picture" /> -->
     </div>
