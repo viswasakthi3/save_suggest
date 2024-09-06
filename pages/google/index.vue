@@ -9,7 +9,7 @@
   <script setup>
   import { ref, onMounted } from 'vue';
   import axios from 'axios';
-  import Cookies from 'js-cookie';
+
   import { useRouter, useRoute } from 'vue-router';
 
   
