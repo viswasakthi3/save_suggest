@@ -7,10 +7,14 @@ export default defineNuxtConfig({
   
   runtimeConfig: {
     public: {
-      API_BASE_URL: process.env.API_BASE_URL , 
-          baseURL: process.env.API_BASE_URL
+      API_BASE_URL:'https://api.theluvit.com' , 
+          baseURL: 'https://api.theluvit.com'
     },
   },
   css: ["~/assets/css/tailwind.css", ],
-  modules: ['@nuxtjs/tailwindcss'],
+  modules: ['@nuxtjs/tailwindcss', 'nuxt-gtag'],
+  gtag: {
+    id: 'G-G51LBZHS9C', // Replace with your Google Analytics ID
+   
+  },
 })

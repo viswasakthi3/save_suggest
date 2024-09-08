@@ -1,3 +1,6 @@
+
+
+
 <template>
 
 <div class="flex flex-col min-h-screen">
@@ -481,6 +484,11 @@ const fetchUserData = async () => {
     })
   } catch (error) {
     console.error("An error occurred while fetching user data: ", error)
+    if (error.response) {
+      console.error("Response data:", error.response.data)
+      console.error("Response status:", error.response.status)
+      console.error("Response headers:", error.response.headers)
+    }
     error.value = "Failed to fetch user data. Please refresh the page."
   }
 }
