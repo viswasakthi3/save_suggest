@@ -41,7 +41,7 @@
         });
   
         // Redirect to /learn
-        router.push('/home'); // Use router instance here
+        router.push('/'); // Use router instance here
       } else {
         message.value = response.data.error;
       }
@@ -65,7 +65,7 @@
   });
   
   const goToLearn = () => {
-    router.push('/home');
+    router.push('/');
   };
   </script>
   

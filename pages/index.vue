@@ -6,7 +6,11 @@
 <div class="flex flex-col min-h-screen">
     <!-- Main content wrapper -->
     <div class="container mx-auto p-4 max-w-full">
-      <h1 class="text-3xl font-bold mb-6 text-center">Save Suggest.com</h1>
+      <div class="flex items-center justify-center space-x-4">
+  <img src="/img/save.png"class="w-12 h-auto">
+  <h1 class="text-3xl font-bold">SaveSuggest.com</h1>
+</div>
+
 
       <div class="auth-container">
   <div class="google-signup-wrapper">
@@ -24,6 +28,7 @@
         type="text" 
         placeholder="Paste URL" 
         class="w-full p-3 pr-24 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-500"
+         @keydown="handleKeydown"
       />
       <button 
         @click="url ? clearUrl() : handlePaste()"
@@ -240,6 +245,9 @@
       <a :href="link.link" target="_blank" class="text-blue-500 hover:underline mb-2 block truncate" @click.prevent="toggleLinkExpansion(link)">
         {{ link.link }}
       </a>
+      <button @click="copyLink(link.link)" class="absolute bottom-0 right-0 text-gray-500 hover:text-gray-700">
+        <Copy class="w-4 h-4" />
+      </button>
       <p v-if="link.expanded" class="text-blue-500 hover:underline cursor-pointer" @click="toggleLinkExpansion(link)">
         See less
       </p>
@@ -348,13 +356,51 @@
       </div>
     </footer>
 </div>
+<div v-if="notification.show" class="fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-md shadow-lg">
+    {{ notification.message }}
+  </div>
 </template>
 
 <script setup>
+
+useSeoMeta({
+  title: 'SaveSuggest - Save, Organize & Share Your Favorite Links',
+  description: 'Discover a smarter way to save, organize, and share your links with SaveSuggest. Create personalized collections, preview content, and share with friends. Start organizing today!',
+  ogTitle: 'SaveSuggest - Save, Organize & Share Your Favorite Links',
+  ogDescription: 'Easily save and manage links, create collections, and share previews with others. Join SaveSuggest and take control of your online content today!',
+  ogImage: '/img/save.png',
+  ogUrl: 'https://savesuggest.com',
+  twitterTitle: 'SaveSuggest - Save, Organize & Share Your Favorite Links',
+  twitterDescription: 'Save, organize, and share links effortlessly. Create collections and see link previews with SaveSuggest. Start organizing your digital life today!',
+  twitterImage: '/img/save-suggest.png',
+  twitterCard: 'summary_large_image'
+})
+
+useHead({
+  htmlAttrs: {
+    lang: 'en'
+  },
+  link: [
+    {
+      rel: 'icon',
+      type: 'image/png',
+      href: '/favicon.png'
+    }
+  ]
+})
+
+
+
+
+
+
+
+
+
+
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
-import { LayoutGrid, List, Grid, Pencil, Trash2, X } from 'lucide-vue-next'
-
+import { LayoutGrid, List, Grid, Pencil, Trash2, X, Copy } from 'lucide-vue-next'
 
 const url = ref('')
 const metadata = ref(null)
@@ -385,6 +431,26 @@ const selectedCollectionId = ref(null)
 const showLayoutModal = ref(false)
 const config = useRuntimeConfig()
 
+
+
+const copyLink = async (link) => {
+  try {
+    await navigator.clipboard.writeText(link);
+    notification.value = { show: true, message: 'Link copied to clipboard' };
+    setTimeout(() => {
+      notification.value.show = false;
+    }, 2000);
+  } catch (err) {
+    console.error('Failed to copy link: ', err);
+    notification.value = { show: true, message: 'Failed to copy link' };
+    setTimeout(() => {
+      notification.value.show = false;
+    }, 2000);
+  }
+}
+
+const notification = ref({ show: false, message: '' });
+
 const fetchMetadata = async () => {
   if (!url.value) {
     error.value = 'Please enter a URL'
@@ -412,6 +478,14 @@ const fetchMetadata = async () => {
     loading.value = false
   }
 }
+
+
+const handleKeydown = (event) => {
+  if (event.key === 'Enter') {
+    fetchMetadata();
+  }
+};
+
 
 const getToken = () => {
   const tokenCookie = document.cookie
@@ -928,6 +1002,8 @@ const confirmDelete = async () => {
   justify-content: center;
   align-items: center;
   height: 100%;
+  margin-top:15px;
+  margin-bottom:15px;
 }
 
 
