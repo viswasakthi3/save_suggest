@@ -113,7 +113,7 @@
       v-model="notes" 
       placeholder="Add notes (optional)" 
       class="w-full p-2 mb-3 border rounded-md"
-      rows="3"
+      rows="1"
     ></textarea>
     <button 
       @click="saveLink"
