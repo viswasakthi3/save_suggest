@@ -1,12 +1,12 @@
 <template>
     <div class="container">
  
-        <UAvatar
+        <img
           :src="profilePicture"
-          alt="Avatar"
-          size="lg"
+          alt="profile picture"
+
           class="avatar"
-          chip-position="top-right"
+    
       />
   
       <!-- <img  alt="Profile Picture" /> -->
@@ -63,7 +63,8 @@
   }
   
   .avatar {
-    border: 1px solid black;
+  width:65px;
+  height:auto;
   }
   </style>
   

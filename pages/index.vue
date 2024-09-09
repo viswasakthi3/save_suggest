@@ -16,7 +16,7 @@
   <div class="google-signup-wrapper">
     <google_signup v-if="!accessToken" class="google-signup" />
   </div>
-  <face2 v-if="accessToken" class="face" />
+  <face3 v-if="accessToken" class="face" />
 </div>
 
       <!-- Centered and Reduced Width Paste URL Bar -->
@@ -172,113 +172,110 @@
   </div>
 </div>
 
-<!-- Saved Links Section -->
-<div class="max-w-5xl mx-auto w-full">
-  <div class="flex justify-between items-center mb-4">
-    <div class="flex items-center gap-4">
-      <h2 class="text-2xl font-bold">{{ 'Saved Links' }}</h2>
-      <div class="relative">
-        <input 
-          v-model="searchQuery"
-          type="text" 
-          placeholder="Search links"
-          class="pl-8 pr-4 py-2 text-sm bg-gray-100 border border-gray-200 rounded-md focus:outline-none focus:ring-0 focus:border-gray-300 transition-all duration-300 ease-in-out"
-        />
-        <span class="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </span>
-      </div>
-    </div>
-    <div class="relative">
-      <button @click="toggleLayoutModal" class="p-2 rounded-full hover:bg-gray-200 transition duration-200">
-        <LayoutGrid class="w-5 h-5" />
-      </button>
-      <div v-if="showLayoutModal" class="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-50">
-        <div class="p-2">
-          <button @click="setLayout('list')" class="w-full p-2 text-left hover:bg-gray-100 rounded-md">
-            <List class="w-5 h-5 inline-block mr-2" /> List View
-          </button>
-          <button @click="setLayout('grid')" class="w-full p-2 text-left hover:bg-gray-100 rounded-md">
-            <Grid class="w-5 h-5 inline-block mr-2" /> Grid View
-          </button>
-          <button @click="setLayout('masonry')" class="w-full p-2 text-left hover:bg-gray-100 rounded-md">
-            <LayoutGrid class="w-5 h-5 inline-block mr-2" /> Masonry View
-          </button>
+  <!-- Saved Links Section -->
+  <div class="max-w-5xl mx-auto w-full">
+    <div class="flex justify-between items-center mb-4">
+      <div class="flex items-center gap-4">
+        <h2 class="text-2xl font-bold">{{ 'Saved Links' }}</h2>
+        <div class="relative">
+          <input 
+            v-model="searchQuery"
+            type="text" 
+            placeholder="Search links"
+            class="pl-8 pr-4 py-2 text-sm bg-gray-100 border border-gray-200 rounded-md focus:outline-none focus:ring-0 focus:border-gray-300 transition-all duration-300 ease-in-out"
+          />
+          <span class="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </span>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Auto-aligned Saved Links -->
-  <div :class="{
-    'grid gap-4': currentLayout === 'grid' || (currentLayout === 'masonry' && filteredAndSearchedLinks.length === 1),
-    'grid-cols-auto-fit': currentLayout === 'grid' || (currentLayout === 'masonry' && filteredAndSearchedLinks.length === 1),
-    'space-y-4': currentLayout === 'list',
-    'masonry-grid': currentLayout === 'masonry' && filteredAndSearchedLinks.length > 1
-  }">
-    <div v-for="link in sortedAndFilteredLinks" :key="link.id" 
-         :class="{
-           'mb-4 p-4 border rounded-lg shadow-md': true, 
-           'masonry-item': currentLayout === 'masonry' && filteredAndSearchedLinks.length > 1,
-           'max-w-sm mx-auto': filteredAndSearchedLinks.length === 1
-         }">
-      <img 
-        v-if="link.img && currentLayout !== 'list'" 
-        :src="link.img" 
-        :alt="link.title"
-        class="w-full h-48 object-cover mb-4 rounded-md"
-      />
-      <div class="flex justify-between items-start mb-2">
-  <h3 v-if="link.title" class="font-bold text-lg">{{ link.title }}</h3>
-  <div>
-    <button @click="editLink(link)" class="text-blue-500 hover:text-blue-600 mr-2">
-      <Pencil class="w-5 h-5" />
-    </button>
-    <button @click="openDeleteModal(link)" class="text-red-500 hover:text-red-600">
-      <Trash2 class="w-5 h-5" />
-    </button>
-  </div>
+    <!-- Auto-aligned Saved Links -->
+    <div :class="{
+      'grid gap-4': currentLayout === 'grid' || (currentLayout === 'masonry' && filteredAndSearchedLinks.length === 1),
+      'grid-cols-auto-fit': currentLayout === 'grid' || (currentLayout === 'masonry' && filteredAndSearchedLinks.length === 1),
+      'space-y-4': currentLayout === 'list',
+      'masonry-grid': currentLayout === 'masonry' && filteredAndSearchedLinks.length > 1
+    }">
+      <div v-for="link in sortedAndFilteredLinks" :key="link.id" 
+           :class="{
+             'mb-4 p-4 border rounded-lg shadow-md': true, 
+             'masonry-item': currentLayout === 'masonry' && filteredAndSearchedLinks.length > 1,
+             'max-w-sm mx-auto': filteredAndSearchedLinks.length === 1
+           }">
+        <img 
+          v-if="link.img && currentLayout !== 'list'" 
+          :src="link.img" 
+          :alt="link.title"
+          class="w-full h-48 object-cover mb-4 rounded-md"
+        />
+        <div class="flex justify-between items-start mb-2">
+          <h3 v-if="link.title" class="font-bold text-lg">{{ link.title }}</h3>
+          <div>
+            <button @click="editLink(link)" class="text-blue-500 hover:text-blue-600 mr-2">
+              <Pencil class="w-5 h-5" />
+            </button>
+            <button @click="openDeleteModal(link)" class="text-red-500 hover:text-red-600">
+              <Trash2 class="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Link and Copy Button -->
+        <div class="flex items-center justify-between">
+          <a :href="link.link" target="_blank" class="text-blue-500 hover:underline mb-2 block truncate">
+            {{ link.link }}
+          </a>
+
+        </div>
+
+        <p v-if="link.description" class="text-gray-600 mb-2">{{ truncateText(link.description, 100) }}</p>
+        <p v-if="link.notes" class="text-gray-600 mb-2">Notes: {{ truncateText(link.notes, 100) }}</p>
+        <img 
+          v-if="link.img && currentLayout === 'list'" 
+          :src="link.img" 
+          :alt="link.title"
+          :style="getImageStyle(link)"
+          class="rounded-md mb-2 cursor-pointer" 
+          @click="openImageModal(link.img)"
+          @load="(event) => onSavedLinkImageLoad(event, link)"
+        />
+
+
+        <div class="flex items-center justify-between">
+  <p class="text-sm text-gray-500 mb-2">Created: {{ formatDate(link.created_at) }}</p>
+
+
+
+
+
+  <button @click="copyLink(link.link)" class="text-gray-500 hover:text-gray-700">
+   
+    <UTooltip text="copy">
+   
+    <Copy class="w-4 h-4" /></UTooltip>
+  </button>
 </div>
 
-      <a :href="link.link" target="_blank" class="text-blue-500 hover:underline mb-2 block truncate" @click.prevent="toggleLinkExpansion(link)">
-        {{ link.link }}
-      </a>
-      <button @click="copyLink(link.link)" class="absolute bottom-0 right-0 text-gray-500 hover:text-gray-700">
-        <Copy class="w-4 h-4" />
-      </button>
-      <p v-if="link.expanded" class="text-blue-500 hover:underline cursor-pointer" @click="toggleLinkExpansion(link)">
-        See less
-      </p>
-      <p v-if="link.description" class="text-gray-600 mb-2">{{ truncateText(link.description, 100) }}</p>
-      <p v-if="link.notes" class="text-gray-600 mb-2">Notes: {{ truncateText(link.notes, 100) }}</p>
-      <img 
-        v-if="link.img && currentLayout === 'list'" 
-        :src="link.img" 
-        :alt="link.title"
-        :style="getImageStyle(link)"
-        class="rounded-md mb-2 cursor-pointer" 
-        @click="openImageModal(link.img)"
-        @load="(event) => onSavedLinkImageLoad(event, link)"
-      />
-      <p class="text-sm text-gray-500 mb-2">Created: {{ formatDate(link.created_at) }}</p>
+        <div class="flex flex-wrap gap-2">
+          <span 
+            v-for="collectionId in link.collection_ids" 
+            :key="collectionId" 
+            class="px-2 py-1 bg-gray-200 rounded-full text-sm cursor-pointer hover:bg-gray-300"
+            @click="selectCollection(collectionId)"
+          >
+            {{ getCollectionName(collectionId) }}
+          </span>
+        </div>
 
-      <div class="flex flex-wrap gap-2">
-        <span 
-          v-for="collectionId in link.collection_ids" 
-          :key="collectionId" 
-          class="px-2 py-1 bg-gray-200 rounded-full text-sm cursor-pointer hover:bg-gray-300"
-          @click="selectCollection(collectionId)"
-        >
-          {{ getCollectionName(collectionId) }}
-        </span>
+
+     
       </div>
-
-      
     </div>
   </div>
-</div>
 
 <!-- Edit Link Modal -->
     <!-- Edit Link Modal -->
@@ -359,7 +356,7 @@
 <div v-if="notification.show" class="fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-md shadow-lg">
     {{ notification.message }}
   </div>
-  <p>!</p>
+
 </template>
 
 <script setup>
@@ -985,8 +982,8 @@ const confirmDelete = async () => {
 
 
 .face {
-  width: 45px; /* Reduced size of the profile picture */
-  height: 45px;
+  width: 60px; /* Reduced size of the profile picture */
+  height: auto;
   border-radius: 50%;
   overflow: hidden;
   position: absolute;
