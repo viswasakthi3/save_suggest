@@ -1,5 +1,4 @@
 <template>
-  <!-- <div> <Nav_learnit2></Nav_learnit2> </div> -->
   <div>
     <h1>Please wait, we are signing you in...</h1>  
     <button @click="goToLearn">Go to home page</button>
@@ -22,20 +21,39 @@ const message = ref('');
 const config = useRuntimeConfig();
 const router = useRouter(); // Define the router here
 
+// Function to check if localStorage is available
+const isLocalStorageAvailable = () => {
+  try {
+    const testKey = '__test__';
+    localStorage.setItem(testKey, testKey);
+    localStorage.removeItem(testKey);
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+
 // Function to handle Google sign-in
 const signInWithGoogle = async () => {
   const route = useRoute();
   code.value = route.query.code || '';
+  
   try {
     const response = await axios.post(`${config.public.API_BASE_URL}/get-token-save`, { idtoken: code.value });
 
     if (response.status === 200) {
-      // Store the JWT token in localStorage
-      localStorage.setItem("access_token", response.data.access_token);
+      const token = response.data.access_token;
       message.value = "User logged in successfully!";
 
+      // Store the JWT token in localStorage if available, otherwise use cookies
+      if (isLocalStorageAvailable()) {
+        localStorage.setItem("access_token", token);
+      } else {
+        console.warn("localStorage is not available, falling back to cookies.");
+      }
+
       // Set the JWT token in cookies
-      Cookies.set("access_token", response.data.access_token, {
+      Cookies.set("access_token", token, {
         expires: 15, // The cookie will expire in 15 days
         sameSite: "lax", // or 'strict' or 'none'
         secure: true, // set to true if you are using https
@@ -55,7 +73,7 @@ const signInWithGoogle = async () => {
 
 // Watch for the presence of the access_token and redirect if found
 watchEffect(() => {
-  const accessToken = localStorage.getItem('access_token') || Cookies.get('access_token');
+  const accessToken = (isLocalStorageAvailable() ? localStorage.getItem('access_token') : null) || Cookies.get('access_token');
   if (accessToken) {
     router.push('/');
   }
