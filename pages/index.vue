@@ -47,7 +47,7 @@
       <div v-if="url" class="mb-6 flex justify-center">
         <div class="w-full max-w-lg border rounded-lg p-4 shadow-md">
           <div v-if="!metadata && !loading" class="mb-4 text-yellow-500 text-center">
-            No details found. You can still save this link.
+             You can still save this link.
           </div>
           <div v-if="metadata && metadata.title" class="mb-3 flex items-center justify-between">
             <h2 class="font-bold text-xl">{{ metadata.title }}</h2>
@@ -191,6 +191,25 @@
           </span>
         </div>
       </div>
+
+      <div class="relative">
+      <button @click="toggleLayoutModal" class="p-2 rounded-full hover:bg-gray-200 transition duration-200">
+        <LayoutGrid class="w-5 h-5" />
+      </button>
+      <div v-if="showLayoutModal" class="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-50">
+        <div class="p-2">
+          <button @click="setLayout('list')" class="w-full p-2 text-left hover:bg-gray-100 rounded-md">
+            <List class="w-5 h-5 inline-block mr-2" /> List View
+          </button>
+          <button @click="setLayout('grid')" class="w-full p-2 text-left hover:bg-gray-100 rounded-md">
+            <Grid class="w-5 h-5 inline-block mr-2" /> Grid View
+          </button>
+          <button @click="setLayout('masonry')" class="w-full p-2 text-left hover:bg-gray-100 rounded-md">
+            <LayoutGrid class="w-5 h-5 inline-block mr-2" /> Masonry View
+          </button>
+        </div>
+      </div>
+    </div>
     </div>
 
     <!-- Auto-aligned Saved Links -->
@@ -424,7 +443,7 @@ const imageWidth = ref(0)
 const imageHeight = ref(0)
 const imageLoaded = ref(false)
 const savedLinkImages = ref({})
-const currentLayout = ref('grid')
+const currentLayout = ref('masonry')
 const selectedCollectionId = ref(null)
 const showLayoutModal = ref(false)
 const config = useRuntimeConfig()
@@ -1011,7 +1030,15 @@ const confirmDelete = async () => {
   top: -70px;
   right: 20px;
 }
-
+@media (max-width: 600px) {
+  .face {
+    top: -70px;
+    right: -15px; /* Move it more to the right */
+    transform: scale(0.8); /* Make it smaller */
+  width: 40px;
+  
+  }
+}
 
 .grid-cols-auto-fit {
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
