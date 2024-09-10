@@ -922,9 +922,7 @@ const sortedAndFilteredLinks = computed(() => {
   return links.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
 })
 
-definePageMeta({
-  colorMode: "light", // or 'dark'
-});
+
 
 
 const accessToken = ref(null);
@@ -1026,7 +1024,7 @@ onMounted(() => {
   fetchAccessToken()
   simulatePasteClick()
   focusUrlInput()
-  initializeDarkMode()
+
 })
 
 const initializeDarkMode = () => {

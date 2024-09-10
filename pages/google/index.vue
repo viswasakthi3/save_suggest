@@ -11,9 +11,7 @@ import axios from 'axios';
 import Cookies from 'js-cookie'; // Ensure Cookies library is imported
 import { useRouter, useRoute } from 'vue-router';
 
-definePageMeta({
-  colorMode: "light", // or 'dark'
-});
+
 
 const code = ref('');
 const message = ref('');
