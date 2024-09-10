@@ -1,16 +1,26 @@
 
-
-
 <template>
+  <div class="flex flex-col min-h-screen dark:bg-gray-900 dark:text-white">
+  <!-- Main content wrapper -->
+  <div class="container mx-auto p-4 max-w-full dark:bg-gray-800">
+    <!-- Header Section -->
+    <div class="flex items-center justify-center space-x-4 mb-5">
+      <img src="/img/save.png" class="w-12 h-auto">
+      <h1 class="text-4xl font-extrabold text-[#1A2421] dark:text-white">Save Suggest</h1>
 
-<div class="flex flex-col min-h-screen">
-    <!-- Main content wrapper -->
-    <div class="container mx-auto p-4 max-w-full">
-   <!-- Header Section -->
-   <div class="flex items-center justify-center space-x-4 mb-6">
-    <img src="/img/save.png" class="w-12 h-auto">
-    <h1 class="text-4xl font-extrabold" style="color:#1A2421;">Save Suggest</h1> <!-- Corrected color -->
+      
+    </div>
+
+ <!-- Mild Paragraph Explaining the App with Dark Mode Toggle -->
+ <div class="flex items-center justify-center space-x-4">
+  <p class="text-center text-gray-600 dark:text-gray-300">
+    Save your links and revisit them anytime.
+  </p>
+  <DarkModeToggle />
 </div>
+
+
+
 
       <div class="auth-container">
   <div class="google-signup-wrapper">
@@ -19,106 +29,117 @@
   <face3 v-if="accessToken" class="face" />
 </div>
 
-      <!-- Centered and Reduced Width Paste URL Bar -->
+      <!-- Paste URL Bar -->
       <div class="mb-6 flex justify-center">
-    <div class="relative w-full max-w-lg">
-      <input 
-        ref="urlInputRef"
-        v-model="url"
-        type="text" 
-        placeholder="Paste URL" 
-        class="w-full p-3 pr-24 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-500"
-         @keydown="handleKeydown"
-      />
-      <button 
-        @click="url ? clearUrl() : handlePaste()"
-        class="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-200"
-      >
-        {{ url ? 'Clear' : '📋 Paste' }}
-      </button>
-    </div>
-  </div>
+        <div class="relative w-full max-w-lg">
+          <input 
+            ref="urlInputRef"
+            v-model="url"
+            type="text" 
+            placeholder="Paste URL" 
+            class="w-full p-3 pr-24 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+            @keydown="handleKeydown"
+          />
+          <button 
+            @click="url ? clearUrl() : handlePaste()"
+            class="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-200 dark:bg-blue-600 dark:hover:bg-blue-700"
+          >
+            {{ url ? 'Clear' : '📋 Paste' }}
+          </button>
+        </div>
+      </div>
+
+
+
       <!-- Loading, Error, and Success Messages -->
       <div v-if="loading" class="mb-4 text-center text-gray-600">Loading preview, please wait...</div>
       <div v-if="error" class="mb-4 text-red-500 text-center">{{ error }}</div>
       <div v-if="linkSaved" class="mb-4 text-green-500 text-center">Link saved successfully!</div>
   
-      <!-- Preview Section -->
-      <div v-if="url" class="mb-6 flex justify-center">
-        <div class="w-full max-w-lg border rounded-lg p-4 shadow-md">
-          <div v-if="!metadata && !loading" class="mb-4 text-yellow-500 text-center">
-             You can still save this link.
-          </div>
-          <div v-if="metadata && metadata.title" class="mb-3 flex items-center justify-between">
-            <h2 class="font-bold text-xl">{{ metadata.title }}</h2>
-            <button @click="startEditingTitle" v-if="!editingTitle" class="text-blue-500 hover:text-blue-600">
-              <Pencil class="w-5 h-5" />
-            </button>
-          </div>
-          <div v-if="editingTitle" class="mb-3">
-            <input 
-              v-model="editedTitle" 
-              type="text" 
-              class="w-full p-2 border rounded-md"
-              @keyup.enter="updateTitle"
-            />
-            <div class="mt-2">
-              <button @click="updateTitle" class="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 mr-2">
-                OK
-              </button>
-              <button @click="cancelEditTitle" class="px-3 py-1 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
-                Cancel
-              </button>
-            </div>
-          </div>
-          <p v-if="metadata && metadata.description" class="text-gray-600 mb-3">{{ truncateText(metadata.description, 150) }}</p>
+<!-- Preview Section -->
+<div v-if="url" class="mb-6 flex justify-center">
+  <div class="w-full max-w-lg border rounded-lg p-4 shadow-md dark:bg-gray-800 dark:border-gray-700">
+    <div v-if="!metadata && !loading" class="mb-4 text-yellow-500 text-center dark:text-yellow-400">
+      You can still save this link.
+    </div>
+    <div class="mb-3 flex items-center justify-between">
+      <h2 v-if="!editingTitle" class="font-bold text-xl dark:text-white">
+        {{ metadata?.title || url }}
+      </h2>
+      <button @click="startEditingTitle" v-if="!editingTitle" class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
+        <Pencil class="w-5 h-5" />
+      </button>
+    </div>
+    <div v-if="editingTitle" class="mb-3">
+      <input 
+        v-model="editedTitle" 
+        type="text" 
+        class="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        @keyup.enter="updateTitle"
+      />
+      <div class="mt-2">
+        <button @click="updateTitle" class="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 mr-2 dark:bg-green-600 dark:hover:bg-green-700">
+          OK
+        </button>
+        <button @click="cancelEditTitle" class="px-3 py-1 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500">
+          Cancel
+        </button>
+      </div>
+    </div>
+    <p v-if="metadata && metadata.description" class="text-gray-600 mb-3 dark:text-gray-300">{{ truncateText(metadata.description, 150) }}</p>
 
-            <!-- Add the link display here -->
-      <a :href="url" target="_blank" rel="noopener noreferrer" class="block mb-3 text-blue-500 hover:underline break-all">
-        {{ url }}
-      </a>
-      
-          <div v-if="metadata && metadata.image" class="mb-3">
-            <div :class="{'w-16 h-16 mx-auto': isLogo, 'max-w-full': !isLogo}">
-              <img 
-                :src="metadata.image" 
-                :alt="metadata.title"
-                :style="imageDisplayStyle"
-                @load="onImageLoad"
-                class="rounded-md"
-              />
-            </div>
-          </div>
-          <div class="mb-3">
-            <h3 class="font-bold mb-2">Add to Collections:</h3>
-            <div class="flex flex-wrap gap-2">
-              <button
-                v-for="collection in collections"
-                :key="collection.id"
-                @click="toggleCollectionSelection(collection.id)"
+    <!-- Add the link display here -->
+    <a :href="url" target="_blank" rel="noopener noreferrer" class="block mb-3 text-blue-500 hover:underline break-all dark:text-blue-400">
+      {{ url }}
+    </a>
+    
+    <div v-if="metadata && metadata.image" class="mb-3">
+      <div :class="{'w-16 h-16 mx-auto': isLogo, 'max-w-full': !isLogo}">
+        <img 
+          :src="metadata.image" 
+          :alt="metadata.title"
+          :style="imageDisplayStyle"
+          @load="onImageLoad"
+          class="rounded-md"
+        />
+      </div>
+    </div>
+    <div class="mb-3">
+      <h3 class="font-bold mb-2 dark:text-white">Add to Collections:</h3>
+      <div class="flex flex-wrap gap-2">
+        <button
+          v-for="collection in collections"
+          :key="collection.id"
+          @click="toggleCollectionSelection(collection.id)"
           class="px-3 py-1 rounded-full transition duration-200 flex items-center"
           :class="[
             selectedCollectionIds.includes(collection.id) 
-              ? 'bg-blue-500 text-white' 
-              : 'bg-gray-200 hover:bg-gray-300'
+              ? 'bg-blue-500 text-white dark:bg-blue-600' 
+              : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white'
           ]"
         >
           {{ collection.name }}
           <span v-if="selectedCollectionIds.includes(collection.id)" class="ml-1">✓</span>
           <span v-else class="ml-1">+</span>
         </button>
+        <button 
+          @click="showNewCollectionForm = true" 
+          class="px-3 py-1 bg-gray-200 rounded-full hover:bg-gray-300 transition duration-200 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white"
+        >
+          + New
+        </button>
       </div>
     </div>
     <textarea 
       v-model="notes" 
       placeholder="Add notes (optional)" 
-      class="w-full p-2 mb-3 border rounded-md"
+      class="w-full p-2 mb-3 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
       rows="1"
     ></textarea>
     <button 
       @click="saveLink"
       :disabled="saving"
-      class="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition duration-200 disabled:bg-gray-400"
+      class="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition duration-200 disabled:bg-gray-400 dark:bg-green-600 dark:hover:bg-green-700"
     >
       {{ saving ? 'Saving...' : 'Save Link' }}
     </button>
@@ -126,71 +147,68 @@
 </div>
 
 <!-- Collections Filter -->
-      <!-- Collections Filter -->
-      <div class="mb-6 text-center">
-        <!-- <h2 class="text-3xl font-semibold text-gray-800 mb-3">{{ selectedCollectionId ? getCollectionName(selectedCollectionId) : 'Your Collections' }}</h2> -->
-      
-        <div class="flex flex-wrap justify-center gap-2 mb-3">
-          <button
-            @click="selectCollection(null)"
-            :class="['px-4 py-2 rounded-full transition duration-200 font-medium', 
-                     selectedCollectionId === null 
-                     ? 'bg-blue-500 text-white' 
-                     : 'bg-gray-200 hover:bg-gray-300']"
-          >
-            All Links
-          </button>
+<div class="mb-6 text-center">
+  <div class="flex flex-wrap justify-center gap-2 mb-3">
+    <button
+      @click="selectCollection(null)"
+      :class="['px-4 py-2 rounded-full transition duration-200 font-medium', 
+               selectedCollectionId === null 
+               ? 'bg-blue-500 text-white dark:bg-blue-600' 
+               : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white']"
+    >
+      All Links
+    </button>
+    
+    <button
+      v-for="collection in collections"
+      :key="collection.id"
+      @click="selectCollection(collection.id)"
+      :class="['px-4 py-2 rounded-full transition duration-200 font-medium', 
+               selectedCollectionId === collection.id 
+               ? 'bg-blue-500 text-white dark:bg-blue-600' 
+               : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white']"
+    >
+      {{ collection.name }}
+    </button>
+    <button 
+      @click="showNewCollectionForm = true" 
+      class="px-4 py-2 bg-gray-200 rounded-full hover:bg-gray-300 transition duration-200 font-medium dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white"
+    >
+      + New Collection
+    </button>
+  </div>
 
-          
-          <button
-            v-for="collection in collections"
-            :key="collection.id"
-            @click="selectCollection(collection.id)"
-            :class="['px-4 py-2 rounded-full transition duration-200 font-medium', 
-                     selectedCollectionId === collection.id 
-                     ? 'bg-blue-500 text-white' 
-                     : 'bg-gray-200 hover:bg-gray-300']"
-          >
-            {{ collection.name }}
-          </button>
-          <button 
-            @click="showNewCollectionForm = true" 
-            class="px-4 py-2 bg-gray-200 rounded-full hover:bg-gray-300 transition duration-200 font-medium"
-          >
-            + New Collection
-          </button>
-          
-        </div>
-
-        <p v-if="selectedCollectionId" class="text-gray-600 mb-3">{{ getCollectionDescription(selectedCollectionId) }}</p>
-      </div>
+  <p v-if="selectedCollectionId" class="text-gray-600 dark:text-gray-300 mb-3">{{ getCollectionDescription(selectedCollectionId) }}</p>
+</div>
 
       
 <!-- New Collection Form -->
-<div v-if="showNewCollectionForm" class="mt-4 p-4 border rounded-lg shadow-md max-w-lg mx-auto">
-  <h3 class="text-lg font-bold mb-3">Create New Collection</h3>
-  <input v-model="newCollection.name" type="text" placeholder="Collection Name" class="w-full p-2 mb-2 border rounded-md" />
-  <input v-model="newCollection.description" type="text" placeholder="Description (optional)" class="w-full p-2 mb-3 border rounded-md" />
+<div v-if="showNewCollectionForm" class="mt-4 p-4 border rounded-lg shadow-md max-w-lg mx-auto dark:bg-gray-800 dark:border-gray-700">
+  <h3 class="text-lg font-bold mb-3 dark:text-white">Create New Collection</h3>
+  <input v-model="newCollection.name" type="text" placeholder="Collection Name" class="w-full p-2 mb-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+  <input v-model="newCollection.description" type="text" placeholder="Description (optional)" class="w-full p-2 mb-3 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
   <div class="flex justify-end">
-    <button @click="createNewCollection" :disabled="creatingCollection" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-200 disabled:bg-gray-400">
+    <button @click="createNewCollection" :disabled="creatingCollection" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-200 disabled:bg-gray-400 dark:bg-blue-600 dark:hover:bg-blue-700">
       {{ creatingCollection ? 'Creating...' : 'Create' }}
     </button>
-    <button @click="showNewCollectionForm = false" class="px-4 py-2 ml-2 bg-gray-200 rounded-md hover:bg-gray-300 transition duration-200">Cancel</button>
+    <button @click="showNewCollectionForm = false" class="px-4 py-2 ml-2 bg-gray-200 rounded-md hover:bg-gray-300 transition duration-200 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white">Cancel</button>
   </div>
 </div>
 
+
   <!-- Saved Links Section -->
-  <div class="max-w-5xl mx-auto w-full">
-    <div class="flex justify-between items-center mb-4">
-      <div class="flex items-center gap-4">
-        <h2 class="text-2xl font-bold">{{ 'Saved Links' }}</h2>
-        <div class="relative">
-          <input 
-            v-model="searchQuery"
-            type="text" 
-            placeholder="Search links"
-            class="pl-8 pr-4 py-2 text-sm bg-gray-100 border border-gray-200 rounded-md focus:outline-none focus:ring-0 focus:border-gray-300 transition-all duration-300 ease-in-out"
-          />
+          <!-- Saved Links Section -->
+          <div class="max-w-5xl mx-auto w-full">
+        <div class="flex justify-between items-center mb-4">
+          <div class="flex items-center gap-4">
+            <h2 class="text-2xl font-bold dark:text-white">{{ 'Saved Links' }}</h2>
+            <div class="relative">
+              <input 
+                v-model="searchQuery"
+                type="text" 
+                placeholder="Search links"
+                class="pl-8 pr-4 py-2 text-sm bg-gray-100 border border-gray-200 rounded-md focus:outline-none focus:ring-0 focus:border-gray-300 transition-all duration-300 ease-in-out dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              />
           <span class="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -200,38 +218,38 @@
       </div>
 
       <div class="relative">
-      <button @click="toggleLayoutModal" class="p-2 rounded-full hover:bg-gray-200 transition duration-200">
-        <LayoutGrid class="w-5 h-5" />
+  <button @click="toggleLayoutModal" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition duration-200">
+    <LayoutGrid class="w-5 h-5 dark:text-white" />
+  </button>
+  <div v-if="showLayoutModal" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-lg z-50">
+    <div class="p-2">
+      <button @click="setLayout('list')" class="w-full p-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md dark:text-white">
+        <List class="w-5 h-5 inline-block mr-2" /> List View
       </button>
-      <div v-if="showLayoutModal" class="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-50">
-        <div class="p-2">
-          <button @click="setLayout('list')" class="w-full p-2 text-left hover:bg-gray-100 rounded-md">
-            <List class="w-5 h-5 inline-block mr-2" /> List View
-          </button>
-          <button @click="setLayout('grid')" class="w-full p-2 text-left hover:bg-gray-100 rounded-md">
-            <Grid class="w-5 h-5 inline-block mr-2" /> Grid View
-          </button>
-          <button @click="setLayout('masonry')" class="w-full p-2 text-left hover:bg-gray-100 rounded-md">
-            <LayoutGrid class="w-5 h-5 inline-block mr-2" /> Masonry View
-          </button>
-        </div>
-      </div>
+      <button @click="setLayout('grid')" class="w-full p-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md dark:text-white">
+        <Grid class="w-5 h-5 inline-block mr-2" /> Grid View
+      </button>
+      <button @click="setLayout('masonry')" class="w-full p-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md dark:text-white">
+        <LayoutGrid class="w-5 h-5 inline-block mr-2" /> Masonry View
+      </button>
     </div>
-    </div>
+  </div>
+</div>
+</div>
 
     <!-- Auto-aligned Saved Links -->
     <div :class="{
-      'grid gap-4': currentLayout === 'grid' || (currentLayout === 'masonry' && filteredAndSearchedLinks.length === 1),
-      'grid-cols-auto-fit': currentLayout === 'grid' || (currentLayout === 'masonry' && filteredAndSearchedLinks.length === 1),
-      'space-y-4': currentLayout === 'list',
-      'masonry-grid': currentLayout === 'masonry' && filteredAndSearchedLinks.length > 1
-    }">
-      <div v-for="link in sortedAndFilteredLinks" :key="link.id" 
-           :class="{
-             'mb-4 p-4 border rounded-lg shadow-md': true, 
-             'masonry-item': currentLayout === 'masonry' && filteredAndSearchedLinks.length > 1,
-             'max-w-sm mx-auto': filteredAndSearchedLinks.length === 1
-           }">
+          'grid gap-4': currentLayout === 'grid' || (currentLayout === 'masonry' && filteredAndSearchedLinks.length === 1),
+          'grid-cols-auto-fit': currentLayout === 'grid' || (currentLayout === 'masonry' && filteredAndSearchedLinks.length === 1),
+          'space-y-4': currentLayout === 'list',
+          'masonry-grid': currentLayout === 'masonry' && filteredAndSearchedLinks.length > 1
+        }">
+          <div v-for="link in sortedAndFilteredLinks" :key="link.id" 
+               :class="{
+                 'mb-4 p-4 border rounded-lg shadow-md dark:bg-gray-700 dark:border-gray-600': true, 
+                 'masonry-item': currentLayout === 'masonry' && filteredAndSearchedLinks.length > 1,
+                 'max-w-sm mx-auto': filteredAndSearchedLinks.length === 1
+               }">
         <img 
           v-if="link.img && currentLayout !== 'list'" 
           :src="link.img" 
@@ -249,7 +267,6 @@
             </button>
           </div>
         </div>
-
         <!-- Link and Copy Button -->
         <div class="flex items-center justify-between">
           <a :href="link.link" target="_blank" class="text-blue-500 hover:underline mb-2 block truncate">
@@ -258,9 +275,11 @@
 
         </div>
 
-        <p v-if="link.description" class="text-gray-600 mb-2">{{ truncateText(link.description, 100) }}</p>
-        <p v-if="link.notes" class="text-gray-700 font-medium mb-2 border border-gray-300 rounded-md p-1 flex items-center">
-  <FileText class="w-4 h-4 mr-2" /> <!-- Replaced StickyNote with FileText -->
+        <h3 v-if="link.title" class="font-bold text-lg dark:text-white">{{ link.title }}</h3>
+            <p v-if="link.description" class="text-gray-600 dark:text-gray-300 mb-2">{{ truncateText(link.description, 100) }}</p>
+            <!-- ... other link content ... -->
+            <p v-if="link.notes" class="text-gray-700 dark:text-gray-300 font-medium mb-2 border border-gray-300 dark:border-gray-600 rounded-md p-1 flex items-center">
+  <FileText class="w-4 h-4 mr-2" />
   {{ truncateText(link.notes, 100) }}
 </p>
 
@@ -295,17 +314,16 @@
   </button>
 </div>
 
-        <div class="flex flex-wrap gap-2">
-          <span 
-            v-for="collectionId in link.collection_ids" 
-            :key="collectionId" 
-            class="px-2 py-1 bg-gray-200 rounded-full text-sm cursor-pointer hover:bg-gray-300"
-            @click="selectCollection(collectionId)"
-          >
-            {{ getCollectionName(collectionId) }}
-          </span>
-        </div>
-
+<div class="flex flex-wrap gap-2">
+  <span 
+    v-for="collectionId in link.collection_ids" 
+    :key="collectionId" 
+    class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-full text-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition duration-200 border border-gray-300 dark:border-gray-600"
+    @click="selectCollection(collectionId)"
+  >
+    {{ getCollectionName(collectionId) }}
+  </span>
+</div>
 
      
       </div>
@@ -315,41 +333,42 @@
 <!-- Edit Link Modal -->
     <!-- Edit Link Modal -->
     <div v-if="editingLink" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="cancelEdit">
-      <div class="bg-white p-6 rounded-lg max-w-lg w-full">
-        <h2 class="text-2xl font-bold mb-4">Edit Link</h2>
-        <input v-model="editingLink.title" class="w-full p-2 mb-2 border rounded" placeholder="Title" />
-        <input v-model="editingLink.link" class="w-full p-2 mb-2 border rounded" placeholder="URL" />
-        <textarea v-model="editingLink.description" class="w-full p-2 mb-2 border rounded" placeholder="Description" rows="3"></textarea>
-        <textarea v-model="editingLink.notes" class="w-full p-2 mb-2 border rounded" placeholder="Notes" rows="3"></textarea>
-        
+  <div class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-lg w-full">
+    <h2 class="text-2xl font-bold mb-4 dark:text-white">Edit Link</h2>
+    <input v-model="editingLink.title" class="w-full p-2 mb-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="Title" />
+    <input v-model="editingLink.link" class="w-full p-2 mb-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="URL" />
+    <textarea v-model="editingLink.description" class="w-full p-2 mb-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="Description" rows="3"></textarea>
+    <textarea v-model="editingLink.notes" class="w-full p-2 mb-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="Notes" rows="3"></textarea>
+    
         <!-- Collection Selection -->
         <div class="mb-3">
-          <h3 class="font-bold mb-2">Collections:</h3>
-          <div class="flex flex-wrap gap-2">
-            <button
-              v-for="collection in collections"
-              :key="collection.id"
-              @click="toggleCollectionSelection(collection.id)"
-              class="px-3 py-1 rounded-full transition duration-200 flex items-center"
-              :class="[
-                selectedCollectionIds.includes(collection.id) 
-                  ? 'bg-blue-500 text-white' 
-                  : 'bg-gray-200 hover:bg-gray-300'
-              ]"
-            >
-              {{ collection.name }}
-              <span v-if="selectedCollectionIds.includes(collection.id)" class="ml-1">✓</span>
-              <span v-else class="ml-1">+</span>
-            </button>
-          </div>
-        </div>
+  <h3 class="font-bold mb-2 dark:text-white">Collections:</h3>
+  <div class="flex flex-wrap gap-2">
+    <button
+      v-for="collection in collections"
+      :key="collection.id"
+      @click="toggleCollectionSelection(collection.id)"
+      class="px-3 py-1 rounded-full transition duration-200 flex items-center"
+      :class="[
+        selectedCollectionIds.includes(collection.id) 
+          ? 'bg-blue-500 text-white dark:bg-blue-600' 
+          : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white'
+      ]"
+    >
+      {{ collection.name }}
+      <span v-if="selectedCollectionIds.includes(collection.id)" class="ml-1">✓</span>
+      <span v-else class="ml-1">+</span>
+    </button>
+  </div>
+</div>
 
-        <div class="flex justify-end">
-          <button @click="updateLink" :disabled="saving" class="px-4 py-2 bg-blue-500 text-white rounded mr-2 disabled:bg-gray-400">
-            {{ saving ? 'Saving...' : 'Save' }}
-          </button>
-          <button @click="cancelEdit" class="px-4 py-2 bg-gray-300 rounded">Cancel</button>
-        </div>
+
+<div class="flex justify-end">
+      <button @click="updateLink" :disabled="saving" class="px-4 py-2 bg-blue-500 text-white rounded mr-2 disabled:bg-gray-400 dark:bg-blue-600 dark:disabled:bg-gray-600">
+        {{ saving ? 'Saving...' : 'Save' }}
+      </button>
+      <button @click="cancelEdit" class="px-4 py-2 bg-gray-300 rounded dark:bg-gray-600 dark:text-white">Cancel</button>
+    </div>
       </div>
     </div>
 
@@ -360,30 +379,29 @@
   </div>
 
   <!-- Delete Confirmation Modal -->
-<div v-if="showDeleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white p-6 rounded-lg max-w-sm w-full">
-    <h2 class="text-2xl font-bold mb-4">Delete Link</h2>
-    <p class="mb-4">Are you sure you want to delete this link?</p>
+  <div v-if="showDeleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-sm w-full">
+    <h2 class="text-2xl font-bold mb-4 dark:text-white">Delete Link</h2>
+    <p class="mb-4 dark:text-gray-300">Are you sure you want to delete this link?</p>
     <div class="flex justify-end">
-      <button @click="confirmDelete" class="px-4 py-2 bg-red-500 text-white rounded mr-2 hover:bg-red-600">
+      <button @click="confirmDelete" class="px-4 py-2 bg-red-500 text-white rounded mr-2 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700">
         Yes, Delete
       </button>
-      <button @click="closeDeleteModal" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">
+      <button @click="closeDeleteModal" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500">
         Cancel
       </button>
     </div>
-    <button @click="closeDeleteModal" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
+    <button @click="closeDeleteModal" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
       <X class="w-6 h-6" />
     </button>
   </div>
 </div>
-<!-- Feedback and Contact Section -->
-<!-- Feedback and Contact Section -->
-<footer class="mt-auto py-6 bg-gray-100">
+
+<footer class="mt-auto py-6 bg-gray-100 dark:bg-gray-800">
       <div class="container mx-auto px-4">
-        <div class="text-center text-gray-600 text-sm md:text-base">
+        <div class="text-center text-gray-600 dark:text-gray-300 text-sm md:text-base">
           <p class="mb-2">For feedback and other inquiries, please contact:</p>
-          <a href="mailto:yethuku13@gmail.com" class="text-blue-500 hover:underline">yethuku13@gmail.com</a>
+          <a href="mailto:yethuku13@gmail.com" class="text-blue-500 hover:underline dark:text-blue-400">yethuku13@gmail.com</a>
         </div>
       </div>
     </footer>
@@ -391,6 +409,8 @@
 <div v-if="notification.show" class="fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-md shadow-lg">
     {{ notification.message }}
   </div>
+
+
 
 </template>
 
@@ -839,23 +859,25 @@ const clearUrl = () => {
   metadata.value = null
   error.value = null
 }
-
 const startEditingTitle = () => {
-  editingTitle.value = true
-  editedTitle.value = metadata.value.title
-}
+  editingTitle.value = true;
+  editedTitle.value = metadata.value?.title || url.value;
+};
 
 const updateTitle = () => {
   if (editedTitle.value.trim() !== '') {
-    metadata.value.title = editedTitle.value.trim()
-    editingTitle.value = false
+    if (metadata.value) {
+      metadata.value.title = editedTitle.value.trim();
+    } else {
+      metadata.value = { title: editedTitle.value.trim() };
+    }
+    editingTitle.value = false;
   }
-}
-
+};
 const cancelEditTitle = () => {
-  editingTitle.value = false
-  editedTitle.value = metadata.value.title
-}
+  editingTitle.value = false;
+  editedTitle.value = metadata.value?.title || url.value;
+};
 
 const setLayout = (layout) => {
   currentLayout.value = layout
@@ -934,12 +956,6 @@ const focusUrlInput = () => {
   }
 }
 
-onMounted(() => {
-  fetchUserData()
-  fetchAccessToken()
-  simulatePasteClick()
-  focusUrlInput()
-})
 
 
 
@@ -985,6 +1001,54 @@ const confirmDelete = async () => {
     closeDeleteModal();
   }
 };
+
+
+
+const isDarkMode = ref(false)
+
+const toggleDarkMode = () => {
+  isDarkMode.value = !isDarkMode.value
+  localStorage.setItem('darkMode', isDarkMode.value.toString())
+}
+
+provide('isDarkMode', isDarkMode)
+provide('toggleDarkMode', toggleDarkMode)
+
+useHead({
+  htmlAttrs: {
+    class: isDarkMode.value ? 'dark' : ''
+  }
+})
+onMounted(() => {
+  fetchUserData()
+  fetchAccessToken()
+  simulatePasteClick()
+  focusUrlInput()
+  initializeDarkMode()
+})
+
+const initializeDarkMode = () => {
+  if (process.client) {
+    const savedDarkMode = localStorage.getItem('darkMode')
+    if (savedDarkMode !== null) {
+      isDarkMode.value = savedDarkMode === 'true'
+    } else {
+      isDarkMode.value = window.matchMedia('(prefers-color-scheme: dark)').matches
+    }
+  }
+}
+
+
+
+watch(isDarkMode, (newValue) => {
+  if (process.client) {
+    if (newValue) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }
+}, { immediate: true })
 
 </script>
 
@@ -1043,7 +1107,7 @@ const confirmDelete = async () => {
 
 .face {
 
-  top: -70px;
+  top: -170px;
   right: 20px;
 }
 @media (max-width: 600px) {

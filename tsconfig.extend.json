@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+      "strict": true,
+      "esModuleInterop": true,
+      "moduleResolution": "bundler",
+      "allowJs": true,
+      "noEmit": true,
+      "resolveJsonModule": true,
+      "allowSyntheticDefaultImports": true,
+      "types": [
+        "@nuxt/types",
+        "@types/node"
+      ]
+    }
+  }
+  
