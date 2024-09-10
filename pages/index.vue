@@ -421,7 +421,7 @@
   </div>
 
 
-<
+
 </template>
 
 <script setup>
@@ -1017,8 +1017,8 @@ const isDarkMode = ref(false)
 
 const toggleDarkMode = () => {
   isDarkMode.value = !isDarkMode.value
+  document.documentElement.classList.toggle('dark')
 }
-
 onMounted(() => {
   fetchUserData()
   fetchAccessToken()
@@ -1026,6 +1026,7 @@ onMounted(() => {
   focusUrlInput()
 
 })
+
 
 
 
