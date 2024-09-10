@@ -1,5 +1,8 @@
 
 <template>
+
+<div :class="{ 'dark': isDarkMode }">
+
   <div class="flex flex-col min-h-screen dark:bg-gray-900 dark:text-white">
   <!-- Main content wrapper -->
   <div class="container mx-auto p-4 max-w-full dark:bg-gray-800">
@@ -413,7 +416,7 @@
   </div>
 
 
-
+</div>
 </template>
 
 <script setup>
@@ -1019,25 +1022,20 @@ useHead({
     class: isDarkMode.value ? 'dark' : ''
   }
 })
+
+
 onMounted(() => {
+  initializeDarkMode()
   fetchUserData()
   fetchAccessToken()
   simulatePasteClick()
   focusUrlInput()
-
 })
 
 const initializeDarkMode = () => {
-  if (process.client) {
-    const savedDarkMode = localStorage.getItem('darkMode')
-    if (savedDarkMode !== null) {
-      isDarkMode.value = savedDarkMode === 'true'
-    } else {
-      isDarkMode.value = window.matchMedia('(prefers-color-scheme: dark)').matches
-    }
-  }
+  const savedDarkMode = localStorage.getItem('darkMode')
+  isDarkMode.value = savedDarkMode === 'true'
 }
-
 
 
 watch(isDarkMode, (newValue) => {
@@ -1049,7 +1047,6 @@ watch(isDarkMode, (newValue) => {
     }
   }
 }, { immediate: true })
-
 </script>
 
 <style scoped>
