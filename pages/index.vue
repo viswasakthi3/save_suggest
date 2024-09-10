@@ -4,12 +4,14 @@
   <!-- Main content wrapper -->
   <div class="container mx-auto p-4 max-w-full dark:bg-gray-800">
     <!-- Header Section -->
-    <div class="flex items-center justify-center space-x-4 mb-5">
-      <img src="/img/save.png" class="w-12 h-auto">
-      <h1 class="text-4xl font-extrabold text-[#1A2421] dark:text-white">Save Suggest</h1>
+    <div 
+  class="flex items-center justify-center space-x-4 mb-5"
+  :class="{ 'logoandname': !!accessToken }"
+>
+  <img src="/img/save.png" class="w-12 h-auto">
+  <h1 class="text-4xl font-extrabold text-[#1A2421] dark:text-white">Save Suggest</h1>
+</div>
 
-      
-    </div>
 
  <!-- Mild Paragraph Explaining the App with Dark Mode Toggle -->
  <div class="flex items-center justify-center space-x-4">
@@ -201,7 +203,7 @@
           <div class="max-w-5xl mx-auto w-full">
         <div class="flex justify-between items-center mb-4">
           <div class="flex items-center gap-4">
-            <h2 class="text-2xl font-bold dark:text-white">{{ 'Saved Links' }}</h2>
+            <h2 class="text-2xl font-bold dark:text-white  savedlink">{{ 'Saved Links' }}</h2>
             <div class="relative">
               <input 
                 v-model="searchQuery"
@@ -1107,16 +1109,26 @@ watch(isDarkMode, (newValue) => {
 
 .face {
 
-  top: -170px;
+  top: -70px;
   right: 20px;
 }
 @media (max-width: 600px) {
   .face {
-    top: -70px;
+    top: -140px;
     right: -15px; /* Move it more to the right */
     transform: scale(0.8); /* Make it smaller */
-  width: 40px;
+  width: 70px;
   
+  }
+
+.savedlink{
+
+  font-size:20px;
+}
+
+  .logoandname{
+
+    margin-left:-45px;
   }
 }
 
