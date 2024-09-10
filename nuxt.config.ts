@@ -19,6 +19,7 @@ export default defineNuxtConfig({
   },
 
   plugins: [
-    '~/plugins/gtm.client.js'
+    // ... other plugins
+    { src: '~/plugins/gtm.client.js', mode: 'client' }
   ],
 })
