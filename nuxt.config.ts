@@ -12,7 +12,10 @@ export default defineNuxtConfig({
     },
   },
   css: ["~/assets/css/tailwind.css", ],
-  modules: ['@nuxtjs/tailwindcss', 'nuxt-gtag'],
+  modules: ['@nuxtjs/tailwindcss', 'nuxt-gtag'   ],
+  
+  
+  
   gtag: {
     id: 'G-G51LBZHS9C', // Replace with your Google Analytics ID
    

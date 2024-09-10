@@ -1,7 +1,7 @@
 
 <template>
 
-<div :class="{ 'dark': isDarkMode }">
+
 
   <div class="flex flex-col min-h-screen dark:bg-gray-900 dark:text-white">
   <!-- Main content wrapper -->
@@ -318,9 +318,9 @@
 
   <button @click="copyLink(link.link)" class="text-gray-500 hover:text-gray-700">
    
-    <UTooltip text="copy">
+ 
    
-    <Copy class="w-4 h-4" /></UTooltip>
+    <Copy class="w-4 h-4" /> 
   </button>
 </div>
 
@@ -421,7 +421,7 @@
   </div>
 
 
-</div>
+<
 </template>
 
 <script setup>
@@ -1017,32 +1017,6 @@ const isDarkMode = ref(false)
 
 const toggleDarkMode = () => {
   isDarkMode.value = !isDarkMode.value
-  if (process.client) {
-    localStorage.setItem('darkMode', isDarkMode.value.toString())
-    updateDarkMode()
-  }
-}
-
-const updateDarkMode = () => {
-  if (process.client) {
-    if (isDarkMode.value) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-  }
-}
-
-const initializeDarkMode = () => {
-  if (process.client) {
-    const savedDarkMode = localStorage.getItem('darkMode')
-    if (savedDarkMode !== null) {
-      isDarkMode.value = savedDarkMode === 'true'
-    } else {
-      isDarkMode.value = window.matchMedia('(prefers-color-scheme: dark)').matches
-    }
-    updateDarkMode()
-  }
 }
 
 onMounted(() => {
@@ -1053,7 +1027,6 @@ onMounted(() => {
   initializeDarkMode()
 })
 
-watch(isDarkMode, updateDarkMode)
 
 
 </script>
