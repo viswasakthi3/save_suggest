@@ -1024,7 +1024,7 @@ onMounted(() => {
   fetchAccessToken()
   simulatePasteClick()
   focusUrlInput()
-  initializeDarkMode()
+
 })
 
 
