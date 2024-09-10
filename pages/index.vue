@@ -6,11 +6,11 @@
 <div class="flex flex-col min-h-screen">
     <!-- Main content wrapper -->
     <div class="container mx-auto p-4 max-w-full">
-      <div class="flex items-center justify-center space-x-4">
-  <img src="/img/save.png"class="w-12 h-auto">
-  <h1 class="text-3xl font-bold">SaveSuggest.com</h1>
+   <!-- Header Section -->
+   <div class="flex items-center justify-center space-x-4 mb-6">
+    <img src="/img/save.png" class="w-12 h-auto">
+    <h1 class="text-4xl font-extrabold" style="color:#1A2421;">Save Suggest</h1> <!-- Corrected color -->
 </div>
-
 
       <div class="auth-container">
   <div class="google-signup-wrapper">
@@ -126,39 +126,46 @@
 </div>
 
 <!-- Collections Filter -->
-<div class="mb-6 text-center">
-  <h2 class="text-2xl font-bold mb-3">{{ selectedCollectionId ? getCollectionName(selectedCollectionId) : 'Your Collections' }}</h2>
-  <p v-if="selectedCollectionId" class="text-gray-600 mb-3">{{ getCollectionDescription(selectedCollectionId) }}</p>
-  <div class="flex flex-wrap justify-center gap-2 mb-3">
-    <button
-      @click="selectCollection(null)"
-      :class="['px-3 py-1 rounded-full transition duration-200', 
-               selectedCollectionId === null 
-               ? 'bg-blue-500 text-white' 
-               : 'bg-gray-200 hover:bg-gray-300']"
-    >
-      All Links
-    </button>
-    <button
-      v-for="collection in collections"
-      :key="collection.id"
-      @click="selectCollection(collection.id)"
-      :class="['px-3 py-1 rounded-full transition duration-200', 
-               selectedCollectionId === collection.id 
-               ? 'bg-blue-500 text-white' 
-               : 'bg-gray-200 hover:bg-gray-300']"
-    >
-      {{ collection.name }}
-    </button>
-    <button 
-      @click="showNewCollectionForm = true" 
-      class="px-3 py-1 bg-gray-200 rounded-full hover:bg-gray-300 transition duration-200"
-    >
-      + New Collection
-    </button>
-  </div>
-</div>
+      <!-- Collections Filter -->
+      <div class="mb-6 text-center">
+        <!-- <h2 class="text-3xl font-semibold text-gray-800 mb-3">{{ selectedCollectionId ? getCollectionName(selectedCollectionId) : 'Your Collections' }}</h2> -->
+      
+        <div class="flex flex-wrap justify-center gap-2 mb-3">
+          <button
+            @click="selectCollection(null)"
+            :class="['px-4 py-2 rounded-full transition duration-200 font-medium', 
+                     selectedCollectionId === null 
+                     ? 'bg-blue-500 text-white' 
+                     : 'bg-gray-200 hover:bg-gray-300']"
+          >
+            All Links
+          </button>
 
+          
+          <button
+            v-for="collection in collections"
+            :key="collection.id"
+            @click="selectCollection(collection.id)"
+            :class="['px-4 py-2 rounded-full transition duration-200 font-medium', 
+                     selectedCollectionId === collection.id 
+                     ? 'bg-blue-500 text-white' 
+                     : 'bg-gray-200 hover:bg-gray-300']"
+          >
+            {{ collection.name }}
+          </button>
+          <button 
+            @click="showNewCollectionForm = true" 
+            class="px-4 py-2 bg-gray-200 rounded-full hover:bg-gray-300 transition duration-200 font-medium"
+          >
+            + New Collection
+          </button>
+          
+        </div>
+
+        <p v-if="selectedCollectionId" class="text-gray-600 mb-3">{{ getCollectionDescription(selectedCollectionId) }}</p>
+      </div>
+
+      
 <!-- New Collection Form -->
 <div v-if="showNewCollectionForm" class="mt-4 p-4 border rounded-lg shadow-md max-w-lg mx-auto">
   <h3 class="text-lg font-bold mb-3">Create New Collection</h3>
@@ -252,7 +259,16 @@
         </div>
 
         <p v-if="link.description" class="text-gray-600 mb-2">{{ truncateText(link.description, 100) }}</p>
-        <p v-if="link.notes" class="text-gray-600 mb-2">Notes: {{ truncateText(link.notes, 100) }}</p>
+        <p v-if="link.notes" class="text-gray-700 font-medium mb-2 border border-gray-300 rounded-md p-1 flex items-center">
+  <FileText class="w-4 h-4 mr-2" /> <!-- Replaced StickyNote with FileText -->
+  {{ truncateText(link.notes, 100) }}
+</p>
+
+
+
+
+
+
         <img 
           v-if="link.img && currentLayout === 'list'" 
           :src="link.img" 
@@ -265,7 +281,7 @@
 
 
         <div class="flex items-center justify-between">
-  <p class="text-sm text-gray-500 mb-2">Created: {{ formatDate(link.created_at) }}</p>
+  <p class="text-sm text-gray-500 mb-2">  {{ formatDate(link.created_at) }}</p>
 
 
 
@@ -417,7 +433,7 @@ useHead({
 
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
-import { LayoutGrid, List, Grid, Pencil, Trash2, X, Copy } from 'lucide-vue-next'
+import { LayoutGrid, List, Grid, Pencil, Trash2, X, Copy , FileText  } from 'lucide-vue-next'
 
 const url = ref('')
 const metadata = ref(null)
