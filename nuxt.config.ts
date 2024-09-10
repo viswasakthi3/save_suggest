@@ -17,4 +17,8 @@ export default defineNuxtConfig({
     id: 'G-G51LBZHS9C', // Replace with your Google Analytics ID
    
   },
+
+  plugins: [
+    '~/plugins/gtm.client.js'
+  ],
 })
