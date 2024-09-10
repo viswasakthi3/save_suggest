@@ -21,7 +21,12 @@
   <p class="text-center text-gray-600 dark:text-gray-300">
     Save your links and revisit them anytime.
   </p>
-  <DarkModeToggle />
+   <!-- Dark Mode Toggle -->
+   <button @click="toggleDarkMode" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200">
+          <Sun v-if="isDarkMode" class="w-5 h-5 text-yellow-500" />
+          <Moon v-else class="w-5 h-5 text-gray-500 dark:text-gray-400" />
+        </button>
+      
 </div>
 
 
@@ -456,9 +461,9 @@ useHead({
 
 
 
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch  } from 'vue'
 import axios from 'axios'
-import { LayoutGrid, List, Grid, Pencil, Trash2, X, Copy , FileText  } from 'lucide-vue-next'
+import { LayoutGrid, List, Grid, Pencil, Trash2, X, Copy , FileText, Sun, Moon } from 'lucide-vue-next'
 
 const url = ref('')
 const metadata = ref(null)
@@ -1007,46 +1012,50 @@ const confirmDelete = async () => {
 
 
 
+
 const isDarkMode = ref(false)
 
 const toggleDarkMode = () => {
   isDarkMode.value = !isDarkMode.value
-  localStorage.setItem('darkMode', isDarkMode.value.toString())
-}
-
-provide('isDarkMode', isDarkMode)
-provide('toggleDarkMode', toggleDarkMode)
-
-useHead({
-  htmlAttrs: {
-    class: isDarkMode.value ? 'dark' : ''
-  }
-})
-
-
-onMounted(() => {
-  initializeDarkMode()
-  fetchUserData()
-  fetchAccessToken()
-  simulatePasteClick()
-  focusUrlInput()
-})
-
-const initializeDarkMode = () => {
-  const savedDarkMode = localStorage.getItem('darkMode')
-  isDarkMode.value = savedDarkMode === 'true'
-}
-
-
-watch(isDarkMode, (newValue) => {
   if (process.client) {
-    if (newValue) {
+    localStorage.setItem('darkMode', isDarkMode.value.toString())
+    updateDarkMode()
+  }
+}
+
+const updateDarkMode = () => {
+  if (process.client) {
+    if (isDarkMode.value) {
       document.documentElement.classList.add('dark')
     } else {
       document.documentElement.classList.remove('dark')
     }
   }
-}, { immediate: true })
+}
+
+const initializeDarkMode = () => {
+  if (process.client) {
+    const savedDarkMode = localStorage.getItem('darkMode')
+    if (savedDarkMode !== null) {
+      isDarkMode.value = savedDarkMode === 'true'
+    } else {
+      isDarkMode.value = window.matchMedia('(prefers-color-scheme: dark)').matches
+    }
+    updateDarkMode()
+  }
+}
+
+onMounted(() => {
+  fetchUserData()
+  fetchAccessToken()
+  simulatePasteClick()
+  focusUrlInput()
+  initializeDarkMode()
+})
+
+watch(isDarkMode, updateDarkMode)
+
+
 </script>
 
 <style scoped>
