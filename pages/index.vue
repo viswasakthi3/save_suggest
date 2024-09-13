@@ -427,15 +427,15 @@
 <script setup>
 
 useSeoMeta({
-  title: 'SaveSuggest - Save, Organize & Share Your Favorite Links',
+  title: 'SaveSuggest - Save your links and revisit them anytime.',
   description: 'Discover a smarter way to save, organize, and share your links with SaveSuggest. Create personalized collections, preview content, and share with friends. Start organizing today!',
-  ogTitle: 'SaveSuggest - Save, Organize & Share Your Favorite Links',
+  ogTitle: 'SaveSuggest - Save your links and revisit them anytime.',
   ogDescription: 'Easily save and manage links, create collections, and share previews with others. Join SaveSuggest and take control of your online content today!',
-  ogImage: '/img/save.png',
+  ogImage: '/img/save_preview_1.png',
   ogUrl: 'https://savesuggest.com',
-  twitterTitle: 'SaveSuggest - Save, Organize & Share Your Favorite Links',
-  twitterDescription: 'Save, organize, and share links effortlessly. Create collections and see link previews with SaveSuggest. Start organizing your digital life today!',
-  twitterImage: '/img/save-suggest.png',
+  twitterTitle: 'SaveSuggest - Save your links and revisit them anytime.',
+  twitterDescription: 'Organize, and share links effortlessly. Create collections and see link previews with SaveSuggest. Start organizing your digital life today!',
+  twitterImage: '/img/save_preview_1.png',
   twitterCard: 'summary_large_image'
 })
 
