@@ -285,7 +285,7 @@
 
         </div>
 
-        <h3 v-if="link.title" class="font-bold text-lg dark:text-white">{{ link.title }}</h3>
+  
             <p v-if="link.description" class="text-gray-600 dark:text-gray-300 mb-2">{{ truncateText(link.description, 100) }}</p>
             <!-- ... other link content ... -->
             <p v-if="link.notes" class="text-gray-700 dark:text-gray-300 font-medium mb-2 border border-gray-300 dark:border-gray-600 rounded-md p-1 flex items-center">
