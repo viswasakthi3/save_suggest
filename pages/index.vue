@@ -448,7 +448,8 @@
       <div class="container mx-auto px-4">
         <div class="text-center text-gray-600 dark:text-gray-300 text-sm md:text-base">
           <p class="mb-2">For feedback and other inquiries, please contact:</p>
-          <a href="mailto:yethuku13@gmail.com" class="text-blue-500 hover:underline dark:text-blue-400">yethuku13@gmail.com</a>
+  <a href="mailto:yethuku13@gmail.com" class="text-blue-500 hover:underline dark:text-blue-400">yethuku13@gmail.com</a> |          <a href="/about" class="text-blue-500 hover:underline dark:text-blue-400">About</a> 
+      
         </div>
       </div>
     </footer>
