@@ -8,7 +8,9 @@
         :class="{ 'logoandname': !!accessToken }"
       >
         <img src="/img/save.png" class="w-12 h-auto">
-        <h1 class="text-4xl font-extrabold text-[#1A2421] dark:text-white">Save Suggest</h1>
+
+        <a href="https://savesuggest.com" >
+        <h1 class="text-4xl font-extrabold text-[#1A2421] dark:text-white">Save Suggest</h1> </a>
       </div>
 
       <!-- Mild Paragraph Explaining the App with Dark Mode Toggle -->
@@ -215,20 +217,34 @@
         <div class="flex justify-between items-center mb-4">
           <div class="flex items-center gap-4">
             <h2 class="text-2xl font-bold dark:text-white savedlink">{{ 'Saved Links' }}</h2>
-            <!-- Search Input -->
-            <div class="relative">
-              <input 
-                v-model="searchQuery"
-                type="text" 
-                placeholder="Search links"
-                class="pl-8 pr-4 py-2 text-sm bg-gray-100 border border-gray-200 rounded-md focus:outline-none focus:ring-0 focus:border-gray-300 transition-all duration-300 ease-in-out dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-              <span class="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </span>
-            </div>
+   
+    <!-- Search Input and Icons -->
+<div class="relative flex items-center">
+  <input 
+    v-model="searchQuery"
+    type="text" 
+    placeholder="Search links"
+    class="pl-8 pr-4 py-2 text-sm bg-gray-100 border border-gray-200 rounded-md focus:outline-none focus:ring-0 focus:border-gray-300 transition-all duration-300 ease-in-out dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+  />
+  <span class="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  </span>
+  
+  <!-- Icons displayed when a collection is selected -->
+  <div v-if="selectedCollectionId" class="flex items-center ml-2">
+    <!-- Edit Icon -->
+    <button @click="openEditCollectionModal" class="text-gray-500 hover:text-gray-700 mr-2" title="Edit Collection">
+      <Pencil class="w-5 h-5" />
+    </button>
+    <!-- Share Icon -->
+    <button @click="copyShareLink" class="text-gray-500 hover:text-gray-700" title="Share Collection">
+      <Share2 class="w-5 h-5" />
+    </button>
+  </div>
+</div>
+
           </div>
           <!-- Layout Toggle Button -->
           <div class="relative">
@@ -484,7 +500,7 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import axios from 'axios';
 import { 
-  LayoutGrid, List, Grid, Pencil, Trash2, X, Copy, FileText, Sun, Moon, ArrowRight ,Link,Pencil, Share2
+  LayoutGrid, List, Grid, Pencil, Trash2, X, Copy, FileText, Sun, Moon, ArrowRight ,Link, Share2
 } from 'lucide-vue-next';
 
 
