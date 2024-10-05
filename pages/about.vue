@@ -77,7 +77,7 @@
           <p class="text-gray-700 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
             Join us today and experience a new way to keep track of the content that matters. Save, organize, share – all in one place.
           </p>
-          <a href="/savesuggest.com" class="px-10 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-full shadow-lg hover:opacity-90 transition-all duration-300">
+          <a href="/" class="px-10 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-full shadow-lg hover:opacity-90 transition-all duration-300">
             Get Started Now
           </a>
         </section>
