@@ -71,32 +71,31 @@
       <div v-if="url" class="mb-6 flex justify-center">
         <div class="w-full max-w-lg border rounded-lg p-4 shadow-md dark:bg-gray-800 dark:border-gray-700">
           <div v-if="!metadata && !loading" class="mb-4 text-yellow-500 text-center dark:text-yellow-400">
-            You can still save this link.
+             Add a title to save the link
           </div>
           <div class="mb-3 flex items-center justify-between">
-            <h2 v-if="!editingTitle" class="font-bold text-xl dark:text-white">
-              {{ metadata?.title || url }}
-            </h2>
-            <button @click="startEditingTitle" v-if="!editingTitle" class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300" title="Edit Title">
-              <Pencil class="w-5 h-5" />
+            <!-- Only show title if metadata?.title exists (no fallback to URL) -->
+          
+            <button 
+              @click="startEditingTitle" 
+              v-if="!editingTitle" 
+              class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300" 
+              title="Edit Title"
+            >
+ 
             </button>
           </div>
-          <div v-if="editingTitle" class="mb-3">
-            <input 
-              v-model="editedTitle" 
-              type="text" 
-              class="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              @keyup.enter="updateTitle"
-            />
-            <div class="mt-2">
-              <button @click="updateTitle" class="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 mr-2 dark:bg-green-600 dark:hover:bg-green-700">
-                OK
-              </button>
-              <button @click="cancelEditTitle" class="px-3 py-1 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500">
-                Cancel
-              </button>
-            </div>
-          </div>
+          <div class="mb-3">
+    <h1 class="font-bold text-xl dark:text-white">Title :</h1>
+    <input
+      v-model="editedTitle"
+      type="text"
+      class="w-full p-2 mb-2 border rounded-md dark:bg-gray-700 dark:text-white dark:border-gray-600"
+      placeholder="Enter title for this link..."
+      ref="titleInputRef"
+    />
+  </div>
+
           <p v-if="metadata && metadata.description" class="text-gray-600 mb-3 dark:text-gray-300">{{ truncateText(metadata.description, 150) }}</p>
 
           <!-- Add the link display here -->
@@ -326,6 +325,15 @@
               @load="(event) => onSavedLinkImageLoad(event, link)"
             />
 
+<!-- Show the URL if there's no image or no description (one-line, truncated) -->
+<p 
+  v-if="(!link.img || !link.description) && link.link" 
+  class="truncate text-blue-500 hover:underline cursor-pointer mb-2"
+  style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis;"
+  @click="openLink(link.link)"
+>
+  {{ link.link }}
+</p>
 
 <!-- Date, Collection Badges, Link Icon with Popover, and Copy Link Button -->
 <div class="flex items-center justify-between mb-2">
@@ -352,7 +360,7 @@
         @mouseenter="showPopover = link.id"
         @mouseleave="showPopover = null"
       >
-        <Link class="w-5 h-5" />
+        <Link class="w-6 h-6" />
       </button>
       <!-- Popover with URL -->
       <div 
@@ -366,7 +374,7 @@
     </div>
     <!-- Copy Link Button -->
     <button @click="copyLink(link.link)" class="text-gray-500 hover:text-gray-700" title="Copy Link">
-      <Copy class="w-4 h-4" />
+      <Copy class="w-6 h-6" />
     </button>
   </div>
 </div>
@@ -649,7 +657,7 @@ const fetchMetadata = async () => {
     }
   } catch (err) {
     console.error('Error fetching metadata:', err)
-    error.value = 'Failed to fetch metadata'
+    error.value = 'No metadata found'
   } finally {
     loading.value = false
   }
@@ -680,6 +688,14 @@ const openImageModal = (imageUrl) => {
 const saveLink = async () => {
   saving.value = true
   linkSaved.value = false
+
+  // Always require a title if no metadata exists
+  if (!metadata.value?.title) {
+    error.value = "no metadata is present."
+    saving.value = false
+    return
+  }
+
   try {
     await makeAuthenticatedRequest(async (token) => {
       await axios.post(`${config.public.API_BASE_URL}/save_links`, {
@@ -710,6 +726,7 @@ const saveLink = async () => {
     error.value = "Failed to save the link. Please try again."
   } finally {
     saving.value = false
+    error.value = ''
   }
 };
 
@@ -1236,22 +1253,37 @@ const copyShareLink = async () => {
   }
 };
 
+watch(metadata, (val) => {
+  if (!val?.title) {
+    editingTitle.value = true
+    editedTitle.value = ''
+    // Add a slight delay to ensure DOM is updated
+    setTimeout(() => {
+      const input = document.querySelector('input[placeholder="Enter title..."]')
+      if (input) {
+        input.focus()
+        input.placeholder = "Please enter a title for this link"
+      }
+    }, 100)
+  }
+});
 
+// Automatically populate editedTitle with fetched metadata title
+watch(metadata, (newVal) => {
+  if (newVal?.title) {
+    editedTitle.value = newVal.title;
+  } else {
+    editedTitle.value = '';
+  }
+});
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Whenever editedTitle changes, update metadata.title automatically
+watch(editedTitle, (newVal) => {
+  if (!metadata.value) {
+    metadata.value = {};
+  }
+  metadata.value.title = newVal.trim();
+});
 
 
 
