@@ -12,15 +12,15 @@
             <LayoutDashboard class="h-5 w-5 mr-3" />
             Dashboard
           </li>
-          <li @click="setView('patients')" :class="{'bg-gray-900': currentView === 'patients' || currentView === 'records'}" class="px-4 py-2 hover:bg-gray-700 cursor-pointer flex items-center">
+          <li @click="setView('patients')" :class="{'bg-gray-900': currentView === 'patients' || currentView === 'records' || currentView === 'recordDetail'}" class="px-4 py-2 hover:bg-gray-700 cursor-pointer flex items-center">
             <Users class="h-5 w-5 mr-3" />
             Patients
           </li>
-          <li @click="setView('appointments')" :class="{'sbg-gray-900': currentView === 'appointments'}" class="px-4 py-2 hover:bg-gray-700 cursor-pointer flex items-center">
+          <li @click="setView('appointments')" :class="{'bg-gray-900': currentView === 'appointments'}" class="px-4 py-2 hover:bg-gray-700 cursor-pointer flex items-center">
             <CalendarDays class="h-5 w-5 mr-3" />
             Appointments
           </li>
-          <li :class="{'bg-gray-900': currentView === 'records'}" class="px-4 py-2 hover:bg-gray-700 cursor-pointer flex items-center" :style="{ opacity: currentView !== 'records' ? 0.5 : 1 }">
+          <li :class="{'bg-gray-900': currentView === 'records' || currentView === 'recordDetail'}" class="px-4 py-2 hover:bg-gray-700 cursor-pointer flex items-center" :style="{ opacity: (currentView !== 'records' && currentView !== 'recordDetail') ? 0.5 : 1 }">
             <FileText class="h-5 w-5 mr-3" />
             Dental Records
           </li>
@@ -176,6 +176,12 @@
               <X class="w-4 h-4" />
             </button>
           </div>
+          <div v-if="successMessage" class="mb-4 p-3 bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700 rounded-md text-green-700 dark:text-green-300 text-sm flex items-center justify-between">
+            <span>{{ successMessage }}</span>
+            <button @click="successMessage = null" class="text-green-500 hover:text-green-700 dark:text-green-400 dark:hover:text-green-200">
+              <X class="w-4 h-4" />
+            </button>
+          </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-1">
@@ -198,6 +204,19 @@
           </div>
         </div>
 
+        <!-- Record Detail View -->
+        <div v-if="currentView === 'recordDetail'">
+          <RecordDetailView
+            :patient-id="selectedPatientId"
+            :record-data-prop="currentRecordForDetail"
+            :initial-tooth-number-prop="initialToothForRecordDetail"
+            :is-creating-new="isCreatingNewRecordView"
+            @back-to-list="handleBackToListFromDetail"
+            @record-saved="handleRecordSavedFromDetail"
+            @error="handleRecordDetailError"
+          />
+        </div>
+
         <!-- User Profile View -->
         <!-- The UserProfile component (which contains the edit button and form logic) is rendered here when currentView is 'profile' -->
         <div v-if="currentView === 'profile'">
@@ -213,17 +232,6 @@
         @patient-added="handlePatientAdded"
         @error="handleFormError"
       />
-
-      <!-- Add/Edit Record Form Modal -->
-      <RecordForm
-        v-if="showRecordForm"
-        :patient-id="selectedPatientId"
-        :record-data="editingRecord"
-        :initial-tooth-number="toothNumberToAdd"
-        @close="closeRecordForm"
-        @record-saved="handleRecordSaved"
-        @error="handleRecordFormError"
-      />
     </main>
   </div>
 </template>
@@ -232,7 +240,7 @@
 import AddPatientForm from '~/components/AddPatientForm.vue';
 import DentalChart from '~/components/DentalChart.vue';
 import DentalRecordsTable from '~/components/DentalRecordsTable.vue';
-import RecordForm from '~/components/RecordForm.vue';
+import RecordDetailView from '~/components/RecordDetailView.vue';
 import AppointmentsView from '~/components/AppointmentsView.vue';
 import UserProfile from '~/components/UserProfile.vue'; // Import UserProfile component
 import { ref, onMounted, computed } from 'vue';
@@ -273,9 +281,11 @@ const selectedPatientName = ref('');
 const patientRecords = ref([]); // This will now store the dental_records array from the new API
 const recordsLoading = ref(false);
 const recordsError = ref(null);
-const showRecordForm = ref(false);
-const editingRecord = ref(null);
-const toothNumberToAdd = ref(null);
+
+// State for RecordDetailView
+const currentRecordForDetail = ref(null);
+const isCreatingNewRecordView = ref(false);
+const initialToothForRecordDetail = ref(null);
 
 // State for Appointments View
 const appointmentsLoading = ref(false);
@@ -300,10 +310,13 @@ const clearError = () => {
 const setView = (view) => {
   clearError();
   currentView.value = view;
-  if (view !== 'records') {
+  if (view !== 'records' && view !== 'recordDetail') {
     selectedPatientId.value = null;
     selectedPatientName.value = '';
     patientRecords.value = [];
+    currentRecordForDetail.value = null;
+    isCreatingNewRecordView.value = false;
+    initialToothForRecordDetail.value = null;
   }
 };
 
@@ -468,25 +481,28 @@ const viewRecords = (patient) => {
 };
 
 const handleAddRecord = () => {
-  editingRecord.value = null;
-  toothNumberToAdd.value = null;
+  currentRecordForDetail.value = null;
+  isCreatingNewRecordView.value = true;
+  initialToothForRecordDetail.value = null;
   recordsError.value = null;
-  showRecordForm.value = true;
+  setView('recordDetail');
 };
 
 const handleAddRecordForTooth = (toothNumber) => {
-  editingRecord.value = null;
-  toothNumberToAdd.value = toothNumber;
+  currentRecordForDetail.value = null;
+  isCreatingNewRecordView.value = true;
+  initialToothForRecordDetail.value = toothNumber;
   recordsError.value = null;
-  showRecordForm.value = true;
+  setView('recordDetail');
 };
 
 const handleEditRecord = (record) => {
   // record is now a dental_record object from the patientRecords.value array
-  editingRecord.value = JSON.parse(JSON.stringify(record)); // Deep copy to avoid modifying original
-  toothNumberToAdd.value = null; // Not adding by tooth number when editing
+  currentRecordForDetail.value = JSON.parse(JSON.stringify(record)); // Deep copy to avoid modifying original
+  isCreatingNewRecordView.value = false;
+  initialToothForRecordDetail.value = record.tooth_number || null; // Or however tooth is stored
   recordsError.value = null;
-  showRecordForm.value = true;
+  setView('recordDetail');
 };
 
 const handleViewDetails = (record) => {
@@ -495,30 +511,38 @@ const handleViewDetails = (record) => {
   handleEditRecord(record); // Open in edit mode to see details
 };
 
-const closeRecordForm = () => {
-  showRecordForm.value = false;
-  editingRecord.value = null;
-  toothNumberToAdd.value = null;
+// Event handlers for RecordDetailView
+const handleBackToListFromDetail = () => {
+  setView('records');
+  // Clear detail specific state after navigating away
+  currentRecordForDetail.value = null;
+  isCreatingNewRecordView.value = false;
+  initialToothForRecordDetail.value = null;
 };
 
-const handleRecordSaved = async (savedData) => {
-  closeRecordForm();
-  successMessage.value = editingRecord.value ? 'Dental record updated successfully.' : 'Dental record created successfully.';
+const handleRecordSavedFromDetail = async () => {
+  successMessage.value = isCreatingNewRecordView.value ? 'Dental record created successfully.' : 'Dental record updated successfully.';
   if (selectedPatientId.value) {
-    await fetchPatientRecords(selectedPatientId.value); // Refresh records for the current patient
+    await fetchPatientRecords(selectedPatientId.value); // Refresh records
   }
+  setView('records');
+  // Clear detail specific state
+  currentRecordForDetail.value = null;
+  isCreatingNewRecordView.value = false;
+  initialToothForRecordDetail.value = null;
   setTimeout(() => { successMessage.value = null; }, 5000);
 };
 
-const handleRecordFormError = (errorMessage) => {
-  console.error('Error from RecordForm:', errorMessage);
-  if (errorMessage === 'Session expired.' || errorMessage === 'Authentication token not found. Please log in.') {
+const handleRecordDetailError = (errorMessage) => {
+  console.error('Error from RecordDetailView:', errorMessage);
+  if (errorMessage === 'Session expired.' || (typeof errorMessage === 'string' && errorMessage.includes('Authentication token'))) {
     recordsError.value = 'Session expired or invalid. Please log in again.';
-    closeRecordForm();
-    handleLogout();
+    handleLogout(); // Log out user
+    setView('dashboard'); // Navigate to a safe view
   } else {
-    recordsError.value = `Form Error: ${errorMessage}`;
+    recordsError.value = `Record Operation Error: ${errorMessage}`;
   }
+  // Do not close the detail view automatically on error, let the user decide or fix.
 };
 
 // --- Appointments View Event Handlers ---

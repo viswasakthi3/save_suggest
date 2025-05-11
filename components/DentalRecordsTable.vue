@@ -16,7 +16,7 @@
             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total Cost</th>
             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">X-Ray</th>
-            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[100px]">Actions</th>
           </tr>
         </thead>
         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -30,7 +30,9 @@
               No dental records found for this patient.
             </td>
           </tr>
-          <tr v-else v-for="record in records" :key="record.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/60">
+          <tr v-else v-for="record in records" :key="record.id" 
+              @click="$emit('view-details', record)" 
+              class="hover:bg-gray-50 dark:hover:bg-gray-700/60 cursor-pointer">
             <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ record.tooth_number }}</td>
             <td class="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">{{ record.condition || 'N/A' }}</td>
             <td class="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">
@@ -47,13 +49,13 @@
               {{ hasXRay(record.treatments) }}
             </td>
             <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">
-              <button @click="$emit('view-details', record)" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mr-2 transition-colors" title="View Details">
+              <button @click.stop="$emit('view-details', record)" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mr-2 transition-colors" title="View Details">
                 <Eye class="h-4 w-4 inline"/>
               </button>
-              <button @click="$emit('edit-record', record)" class="text-yellow-500 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300 mr-2 transition-colors" title="Edit Record">
+              <button @click.stop="$emit('edit-record', record)" class="text-yellow-500 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300 mr-2 transition-colors" title="Edit Record">
                  <Pencil class="h-4 w-4 inline"/>
               </button>
-              <button @click="$emit('delete-record', record.id)" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors" title="Delete Record">
+              <button @click.stop="$emit('delete-record', record.id)" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors" title="Delete Record">
                  <Trash2 class="h-4 w-4 inline"/>
               </button>
             </td>
