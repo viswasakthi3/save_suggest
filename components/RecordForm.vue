@@ -585,7 +585,7 @@ onMounted(() => {
   background-color: #4a5568; /* Tailwind gray-600 for dark mode */
 }
 .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: #2d3748; /* Tailwind gray-700 for dark mode */
+  background-color: #2d3748; /* Tailwind gray-700 for dark modesssss */
 }
 
 .form-input-field {
