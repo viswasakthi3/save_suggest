@@ -16,7 +16,7 @@
             <Users class="h-5 w-5 mr-3" />
             Patients
           </li>
-          <li @click="setView('appointments')" :class="{'bg-gray-900': currentView === 'appointments'}" class="px-4 py-2 hover:bg-gray-700 cursor-pointer flex items-center">
+          <li @click="setView('appointments')" :class="{'sbg-gray-900': currentView === 'appointments'}" class="px-4 py-2 hover:bg-gray-700 cursor-pointer flex items-center">
             <CalendarDays class="h-5 w-5 mr-3" />
             Appointments
           </li>
@@ -57,7 +57,8 @@
           <CircleHelp class="h-5 w-5 mr-2" />
           Help
         </button>
-        <div v-if="user" class="flex items-center">
+        <!-- Make user info clickable -->
+        <div v-if="user" @click="setView('profile')" class="flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded-md">
           <div class="bg-blue-500 text-white rounded-full h-8 w-8 flex items-center justify-center font-semibold mr-2 uppercase">
             {{ user.username ? user.username.substring(0, 2) : 'U' }}
           </div>
@@ -188,7 +189,6 @@
                 :records="patientRecords"
                 :loading="recordsLoading"
                 @edit-record="handleEditRecord"
-                @delete-record="handleDeleteRecord"
                 @view-details="handleViewDetails" 
               />
               <button @click="handleAddRecord" class="mt-4 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded flex items-center">
@@ -196,6 +196,12 @@
               </button>
             </div>
           </div>
+        </div>
+
+        <!-- User Profile View -->
+        <!-- The UserProfile component (which contains the edit button and form logic) is rendered here when currentView is 'profile' -->
+        <div v-if="currentView === 'profile'">
+          <UserProfile />
         </div>
 
       </div>
@@ -228,6 +234,7 @@ import DentalChart from '~/components/DentalChart.vue';
 import DentalRecordsTable from '~/components/DentalRecordsTable.vue';
 import RecordForm from '~/components/RecordForm.vue';
 import AppointmentsView from '~/components/AppointmentsView.vue';
+import UserProfile from '~/components/UserProfile.vue'; // Import UserProfile component
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
@@ -263,7 +270,7 @@ const currentView = ref('dashboard');
 // State for Records View
 const selectedPatientId = ref(null);
 const selectedPatientName = ref('');
-const patientRecords = ref([]);
+const patientRecords = ref([]); // This will now store the dental_records array from the new API
 const recordsLoading = ref(false);
 const recordsError = ref(null);
 const showRecordForm = ref(false);
@@ -412,27 +419,39 @@ const handleFormError = (errorMessage) => {
 const fetchPatientRecords = async (patientId) => {
   recordsLoading.value = true;
   recordsError.value = null;
-  patientRecords.value = [];
+  patientRecords.value = []; // Clear previous records
   const token = getAccessTokenCookie();
   if (!token) {
     recordsError.value = 'Authentication token missing.';
     recordsLoading.value = false;
+    handleLogout(); // Added to ensure logout if token is missing here
     return;
   }
 
   try {
-    const response = await axios.get(`${config.public.API_BASE_URL}/appointments`, {
+    // Use the new endpoint to fetch comprehensive dental data for the patient
+    const response = await axios.get(`${config.public.API_BASE_URL}/patients/${patientId}/dental-records`, {
       headers: { Authorization: `Bearer ${token}` },
-      params: { patient_id: patientId, per_page: 100 }
     });
-    patientRecords.value = response.data.appointments || [];
+    
+    // The new API returns an object with patient info, dental_records, and recent_appointments
+    if (response.data) {
+      patientRecords.value = response.data.dental_records || [];
+      if (response.data.patient) {
+        selectedPatientName.value = `${response.data.patient.first_name || ''} ${response.data.patient.last_name || ''}`.trim();
+      }
+      // response.data.recent_appointments could be stored and used if needed elsewhere
+    } else {
+      patientRecords.value = [];
+    }
+
   } catch (err) {
-    console.error(`Error fetching records for patient ${patientId}:`, err);
+    console.error(`Error fetching dental records for patient ${patientId}:`, err);
     if (err.response && err.response.status === 401) {
       recordsError.value = 'Session expired. Please log in again.';
       handleLogout();
     } else {
-      recordsError.value = `Could not fetch records: ${err.message || 'Unknown error'}`;
+      recordsError.value = `Could not fetch dental records: ${err.message || 'Unknown error'}`;
     }
     patientRecords.value = [];
   } finally {
@@ -443,7 +462,7 @@ const fetchPatientRecords = async (patientId) => {
 const viewRecords = (patient) => {
   if (!patient || !patient.id) return;
   selectedPatientId.value = patient.id;
-  selectedPatientName.value = `${patient.first_name} ${patient.last_name}`;
+  // selectedPatientName is now set within fetchPatientRecords from the API response
   setView('records');
   fetchPatientRecords(patient.id);
 };
@@ -463,49 +482,17 @@ const handleAddRecordForTooth = (toothNumber) => {
 };
 
 const handleEditRecord = (record) => {
-  editingRecord.value = record;
-  toothNumberToAdd.value = null;
+  // record is now a dental_record object from the patientRecords.value array
+  editingRecord.value = JSON.parse(JSON.stringify(record)); // Deep copy to avoid modifying original
+  toothNumberToAdd.value = null; // Not adding by tooth number when editing
   recordsError.value = null;
   showRecordForm.value = true;
 };
 
-const handleDeleteRecord = async (recordId) => {
-  if (!confirm('Are you sure you want to delete this record? This action cannot be undone.')) {
-    return;
-  }
-
-  recordsLoading.value = true;
-  recordsError.value = null;
-  const token = getAccessTokenCookie();
-  if (!token) {
-    recordsError.value = 'Authentication token missing.';
-    recordsLoading.value = false;
-    return;
-  }
-
-  try {
-    await axios.delete(`${config.public.API_BASE_URL}/appointments/${recordId}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    successMessage.value = 'Record deleted successfully.';
-    await fetchPatientRecords(selectedPatientId.value);
-  } catch (err) {
-    console.error(`Error deleting record ${recordId}:`, err);
-    if (err.response && err.response.status === 401) {
-      recordsError.value = 'Session expired. Please log in again.';
-      handleLogout();
-    } else {
-      recordsError.value = `Could not delete record: ${err.message || 'Unknown error'}`;
-    }
-  } finally {
-    recordsLoading.value = false;
-    setTimeout(() => { successMessage.value = null; }, 5000);
-  }
-};
-
 const handleViewDetails = (record) => {
-  console.log('View Details:', record);
-  alert(`Details for Record ID: ${record.id}\nDate: ${record.date} ${record.time}\nStatus: ${record.status}\nReason: ${record.reason}\nNotes: ${record.notes}`);
+  // record is a dental_record object
+  console.log('Viewing Dental Record Details:', record);
+  handleEditRecord(record); // Open in edit mode to see details
 };
 
 const closeRecordForm = () => {
@@ -516,8 +503,10 @@ const closeRecordForm = () => {
 
 const handleRecordSaved = async (savedData) => {
   closeRecordForm();
-  successMessage.value = editingRecord.value ? 'Record updated successfully.' : 'Record added successfully.';
-  await fetchPatientRecords(selectedPatientId.value);
+  successMessage.value = editingRecord.value ? 'Dental record updated successfully.' : 'Dental record created successfully.';
+  if (selectedPatientId.value) {
+    await fetchPatientRecords(selectedPatientId.value); // Refresh records for the current patient
+  }
   setTimeout(() => { successMessage.value = null; }, 5000);
 };
 

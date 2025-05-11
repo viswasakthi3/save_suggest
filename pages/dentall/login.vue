@@ -79,6 +79,64 @@
 
       <!-- Signup Form -->
       <form v-else @submit.prevent="handleSignup">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div class="relative">
+            <label for="signup-first-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name</label>
+            <input
+              v-model="signupForm.first_name"
+              type="text"
+              id="signup-first-name"
+              required
+              placeholder="Enter first name"
+              class="w-full pl-4 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+          <div class="relative">
+            <label for="signup-last-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Last Name (Optional)</label>
+            <input
+              v-model="signupForm.last_name"
+              type="text"
+              id="signup-last-name"
+              placeholder="Enter last name"
+              class="w-full pl-4 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+        </div>
+        <div class="mb-4 relative">
+          <label for="signup-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+          <Mail class="absolute left-3 top-9 h-5 w-5 text-gray-400" />
+          <input
+            v-model="signupForm.email"
+            type="email"
+            id="signup-email"
+            required
+            placeholder="Enter your email"
+            class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+          />
+        </div>
+        <div class="mb-4 relative">
+          <label for="signup-phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
+          <Phone class="absolute left-3 top-9 h-5 w-5 text-gray-400" />
+          <input
+            v-model="signupForm.phone"
+            type="tel"
+            id="signup-phone"
+            required
+            placeholder="Enter phone number"
+            class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+          />
+        </div>
+         <div class="mb-4 relative">
+          <label for="signup-specialization" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Specialization (Optional)</label>
+          <Briefcase class="absolute left-3 top-9 h-5 w-5 text-gray-400" />
+          <input
+            v-model="signupForm.specialization"
+            type="text"
+            id="signup-specialization"
+            placeholder="e.g., Orthodontics, General Dentistry"
+            class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+          />
+        </div>
         <div class="mb-4 relative">
           <label for="signup-username" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Username</label>
           <User class="absolute left-3 top-9 h-5 w-5 text-gray-400" />
@@ -129,7 +187,7 @@
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
-import { Stethoscope, User, Lock, LoaderCircle, X, Eye, EyeOff } from 'lucide-vue-next';
+import { Stethoscope, User, Lock, LoaderCircle, X, Eye, EyeOff, Mail, Phone, Briefcase } from 'lucide-vue-next';
 import Cookies from 'js-cookie'; // Using js-cookie for easier cookie handling
 
 const config = useRuntimeConfig();
@@ -149,8 +207,13 @@ const loginForm = ref({
 const signupForm = ref({
   username: '',
   password: '',
-  role: 'staff', // Defaulting role as per API
-  dentist_id: null // Defaulting dentist_id as per API
+  first_name: '', // Added
+  last_name: '',  // Added
+  email: '',      // Added
+  phone: '',      // Added
+  specialization: '', // Added
+  role: 'dentist', // Defaulting role to dentist as per API requirements for extra fields
+  dentist_id: null // This is assigned by the backend
 });
 
 // Function to set the access token cookie
@@ -198,23 +261,29 @@ const handleSignup = async () => {
   error.value = null;
   try {
     // Use API_BASE_URL from runtime config
-    const response = await axios.post(`${config.public.API_BASE_URL}/dental/auth/signup`, {
+    const response = await axios.post(`${config.public.API_BASE_URL}/api/dental/auth/signup`, {
       username: signupForm.value.username,
       password: signupForm.value.password,
-      role: signupForm.value.role, // Sending default role
-      dentist_id: signupForm.value.dentist_id // Sending default dentist_id
+      role: signupForm.value.role,
+      first_name: signupForm.value.first_name, // Added
+      last_name: signupForm.value.last_name,   // Added
+      email: signupForm.value.email,           // Added
+      phone: signupForm.value.phone,           // Added
+      specialization: signupForm.value.specialization // Added
     });
 
     if (response.data.access_token) {
       setAccessTokenCookie(response.data.access_token);
       router.push('/dental'); // Redirect to dental dashboard
     } else {
-      error.value = 'Signup failed: No access token received.';
+      // Include potential message from API response
+      error.value = response.data.message || 'Signup failed: No access token received.';
     }
   } catch (err) {
     console.error('Signup error:', err);
-    if (err.response && err.response.data && err.response.data.error) {
-      error.value = err.response.data.error;
+    if (err.response && err.response.data && (err.response.data.error || err.response.data.message)) {
+      // Use error or message from response
+      error.value = err.response.data.error || err.response.data.message;
     } else {
       error.value = 'An unexpected error occurred during signup.';
     }
