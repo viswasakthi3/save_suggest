@@ -1,44 +1,65 @@
 <template>
   <div class="flex h-screen bg-gray-100 dark:bg-gray-900">
     <!-- Sidebar -->
-    <aside class="w-64 bg-gray-800 text-white flex flex-col">
+    <aside class="w-64 bg-gray-800 text-white flex flex-col min-h-screen">
       <div class="p-4 border-b border-gray-700 flex items-center">
         <Stethoscope class="h-8 w-8 mr-2 text-blue-400" />
         <h1 class="text-xl font-semibold">DentalTrack</h1>
       </div>
-      <nav class="mt-4 flex-1">
+      <nav class="mt-4 flex-1 px-2 space-y-1">
         <ul>
-          <li @click="setView('dashboard')" :class="{'bg-gray-900': currentView === 'dashboard'}" class="px-4 py-2 hover:bg-gray-700 cursor-pointer flex items-center">
-            <LayoutDashboard class="h-5 w-5 mr-3" />
-            Dashboard
+          <li @click="setView('dashboard')"
+              :class="{
+                'bg-gray-900 text-white': currentView === 'dashboard',
+                'text-gray-300 hover:bg-gray-700 hover:text-white': currentView !== 'dashboard'
+              }"
+              class="px-3 py-2.5 rounded-md text-sm font-medium cursor-pointer flex items-center group transition-colors duration-150 ease-in-out">
+            <LayoutDashboard
+              :class="currentView === 'dashboard' ? 'text-blue-400' : 'text-gray-400 group-hover:text-gray-300'"
+              class="h-5 w-5 mr-3 flex-shrink-0" />
+            <span>Dashboard</span>
           </li>
-          <li @click="setView('patients')" :class="{'bg-gray-900': currentView === 'patients' || currentView === 'records' || currentView === 'recordDetail'}" class="px-4 py-2 hover:bg-gray-700 cursor-pointer flex items-center">
-            <Users class="h-5 w-5 mr-3" />
-            Patients
+          <li @click="setView('patients')"
+              :class="{
+                'bg-gray-900 text-white': currentView === 'patients',
+                'text-gray-300 hover:bg-gray-700 hover:text-white': currentView !== 'patients'
+              }"
+              class="px-3 py-2.5 rounded-md text-sm font-medium cursor-pointer flex items-center group transition-colors duration-150 ease-in-out">
+            <Users
+              :class="currentView === 'patients' ? 'text-blue-400' : 'text-gray-400 group-hover:text-gray-300'"
+              class="h-5 w-5 mr-3 flex-shrink-0" />
+            <span>Patients</span>
           </li>
-          <li @click="setView('appointments')" :class="{'bg-gray-900': currentView === 'appointments'}" class="px-4 py-2 hover:bg-gray-700 cursor-pointer flex items-center">
-            <CalendarDays class="h-5 w-5 mr-3" />
-            Appointments
+          <li @click="setView('appointments')"
+              :class="{
+                'bg-gray-900 text-white': currentView === 'appointments',
+                'text-gray-300 hover:bg-gray-700 hover:text-white': currentView !== 'appointments'
+              }"
+              class="px-3 py-2.5 rounded-md text-sm font-medium cursor-pointer flex items-center group transition-colors duration-150 ease-in-out">
+            <CalendarDays
+              :class="currentView === 'appointments' ? 'text-blue-400' : 'text-gray-400 group-hover:text-gray-300'"
+              class="h-5 w-5 mr-3 flex-shrink-0" />
+            <span>Appointments</span>
           </li>
-          <li :class="{'bg-gray-900': currentView === 'records' || currentView === 'recordDetail'}" class="px-4 py-2 hover:bg-gray-700 cursor-pointer flex items-center" :style="{ opacity: (currentView !== 'records' && currentView !== 'recordDetail') ? 0.5 : 1 }">
-            <FileText class="h-5 w-5 mr-3" />
-            Dental Records
+          <li @click="setView('profile')"
+              :class="{
+                'bg-gray-900 text-white': currentView === 'profile',
+                'text-gray-300 hover:bg-gray-700 hover:text-white': currentView !== 'profile'
+              }"
+              class="px-3 py-2.5 rounded-md text-sm font-medium cursor-pointer flex items-center group transition-colors duration-150 ease-in-out">
+            <User
+              :class="currentView === 'profile' ? 'text-blue-400' : 'text-gray-400 group-hover:text-gray-300'"
+              class="h-5 w-5 mr-3 flex-shrink-0" />
+            <span>Profile</span>
           </li>
         </ul>
       </nav>
-      <div class="p-4 border-t border-gray-700">
-        <ul>
-          <li class="px-4 py-2 hover:bg-gray-700 cursor-pointer flex items-center">
-            <Settings class="h-5 w-5 mr-3" />
-            Settings
-          </li>
-          <li class="px-4 py-2 hover:bg-gray-700 cursor-pointer flex items-center">
-            <CircleHelp class="h-5 w-5 mr-3" />
-            Help
-          </li>
-          <li @click="handleLogout" class="px-4 py-2 hover:bg-red-700 cursor-pointer flex items-center text-red-400 hover:text-white">
-            <LogOut class="h-5 w-5 mr-3" />
-            Logout
+      <div class="p-4 border-t border-gray-700 mt-auto">
+        <ul class="space-y-1">
+          <li @click="handleLogout"
+              class="px-3 py-2.5 rounded-md text-sm font-medium cursor-pointer flex items-center group text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-150 ease-in-out">
+            <LogOut class="h-5 w-5 mr-3 flex-shrink-0 text-gray-400 group-hover:text-gray-300" />
+            <span>Logout</span>
           </li>
         </ul>
       </div>
@@ -52,24 +73,16 @@
       </div>
 
       <!-- Header -->
-      <header class="bg-white dark:bg-gray-800 shadow-sm p-4 flex justify-end items-center">
+      <!-- <header class="bg-white dark:bg-gray-800 shadow-sm p-4 flex justify-end items-center">
         <button class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2 px-4 rounded mr-4 flex items-center">
           <CircleHelp class="h-5 w-5 mr-2" />
           Help
         </button>
-        <!-- Make user info clickable -->
-        <div v-if="user" @click="setView('profile')" class="flex items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded-md">
-          <div class="bg-blue-500 text-white rounded-full h-8 w-8 flex items-center justify-center font-semibold mr-2 uppercase">
-            {{ user.username ? user.username.substring(0, 2) : 'U' }}
-          </div>
-          <span class="dark:text-white">{{ user.username || 'User' }}</span>
-          <span v-if="user.role" class="ml-2 text-xs bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded">{{ user.role }}</span>
-        </div>
-        <div v-else-if="!loading" class="flex items-center">
+        <div v-if="!user && !loading" class="flex items-center">
           <div class="bg-gray-300 rounded-full h-8 w-8 flex items-center justify-center mr-2"></div>
           <span class="text-gray-500 dark:text-gray-400">Loading user...</span>
         </div>
-      </header>
+      </header> -->
 
       <!-- View Container -->
       <div class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900 p-6">
@@ -218,7 +231,6 @@
         </div>
 
         <!-- User Profile View -->
-        <!-- The UserProfile component (which contains the edit button and form logic) is rendered here when currentView is 'profile' -->
         <div v-if="currentView === 'profile'">
           <UserProfile />
         </div>
@@ -260,7 +272,8 @@ import {
   LogOut,
   LoaderCircle,
   X,
-  ArrowLeft
+  ArrowLeft,
+  User // Added User icon
 } from 'lucide-vue-next';
 
 const router = useRouter();

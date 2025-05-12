@@ -1,18 +1,6 @@
 <template>
-  <div class="p-4 sm:p-6 bg-slate-50 dark:bg-gray-900 min-h-[calc(100vh-var(--header-height,0px))]">
-    <div class="max-w-6xl mx-auto">
-      <div class="flex justify-between items-center pb-5 mb-6 border-b border-gray-300 dark:border-gray-700">
-        <div class="flex items-center">
-          <button @click="$emit('back-to-list')" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors mr-3 text-gray-600 dark:text-gray-300">
-            <ArrowLeft class="h-6 w-6" />
-          </button>
-          <h3 class="text-2xl sm:text-3xl font-bold text-sky-700 dark:text-sky-400 flex items-center">
-            <ClipboardEdit class="h-8 w-8 mr-3" />
-            {{ isEditing ? `Edit Record: Tooth #${formData.tooth_number}` : `New Record: Tooth #${formData.tooth_number || '...'}` }}
-          </h3>
-        </div>
-      </div>
-
+  <div class="bg-slate-50 dark:bg-gray-900 min-h-[calc(100vh-var(--header-height,0px))]">
+    <div>
       <form @submit.prevent="handleSubmit" class="space-y-8">
         <div v-if="error" class="flex items-start p-4 mb-4 bg-red-100 dark:bg-red-900/60 border-l-4 border-red-500 dark:border-red-600 rounded-md shadow-md text-red-700 dark:text-red-200">
           <AlertTriangle class="h-5 w-5 mr-3 flex-shrink-0 mt-0.5" />
