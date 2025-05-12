@@ -1,449 +1,228 @@
 <template>
-  <div class="bg-slate-50 dark:bg-slate-900 shadow-xl rounded-xl overflow-hidden">
-    <!-- Compact header bar -->
-    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-indigo-700 dark:to-purple-800 px-4 py-3 flex justify-between items-center">
-      <button @click="$emit('back-to-list')" 
-              class="flex items-center text-white text-sm font-medium hover:bg-white/20 py-1 px-2 rounded-md transition-colors">
-        <ArrowLeft class="h-4 w-4 mr-1.5" />Back
-      </button>
-      <div class="text-white font-medium flex items-center">
-        <div v-if="isEditing">Editing Tooth #{{ formData.tooth_number }}</div>
-        <div v-else>New Tooth Record</div>
-      </div>
-      <button 
-        type="submit"
-        form="dental-record-form" 
-        :disabled="isSubmitting"
-        class="bg-white text-indigo-600 hover:bg-indigo-50 font-medium text-sm py-1 px-3 rounded-md shadow-sm flex items-center transition-colors disabled:opacity-60"
-      >
-        <LoaderCircle v-if="isSubmitting" class="animate-spin h-4 w-4 mr-1.5" />
-        <Save v-else class="h-4 w-4 mr-1.5" />
-        {{ isSubmitting ? 'Saving' : 'Save' }}
-      </button>
-    </div>
-
-    <!-- Add debug information panel at the top for troubleshooting -->
-    <div v-if="showDebugInfo" class="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 rounded">
-      <div class="flex justify-between items-center">
-        <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-300">Debug Information</h3>
-        <button @click="showDebugInfo = false" class="text-yellow-600 dark:text-yellow-400">
-          <X class="h-4 w-4" />
-        </button>
-      </div>
-      <div class="text-xs font-mono mt-2 overflow-auto max-h-40 bg-black/5 dark:bg-black/20 p-2 rounded">
-        <p>Patient ID: {{ props.patientId }}</p>
-        <p>Initial Tooth: {{ props.initialToothNumberProp }}</p>
-        <p>Is Editing: {{ isEditing }}</p>
-        <p>Record ID: {{ formData.id || 'New Record' }}</p>
-        <p>Raw Record Data: {{ recordDataDebug }}</p>
-      </div>
-    </div>
-
-    <!-- Main content in a two-column layout -->
-    <div class="p-4">
-      <!-- Error alert -->
-      <div v-if="error" class="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded text-sm text-red-600 dark:text-red-300 flex items-start">
-        <AlertCircle class="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-        <span>{{ error }}</span>
+  <div class="p-4 sm:p-6 bg-slate-50 dark:bg-gray-900 min-h-[calc(100vh-var(--header-height,0px))]">
+    <div class="max-w-6xl mx-auto">
+      <div class="flex justify-between items-center pb-5 mb-6 border-b border-gray-300 dark:border-gray-700">
+        <div class="flex items-center">
+          <button @click="$emit('back-to-list')" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors mr-3 text-gray-600 dark:text-gray-300">
+            <ArrowLeft class="h-6 w-6" />
+          </button>
+          <h3 class="text-2xl sm:text-3xl font-bold text-sky-700 dark:text-sky-400 flex items-center">
+            <ClipboardEdit class="h-8 w-8 mr-3" />
+            {{ isEditing ? `Edit Record: Tooth #${formData.tooth_number}` : `New Record: Tooth #${formData.tooth_number || '...'}` }}
+          </h3>
+        </div>
       </div>
 
-      <form id="dental-record-form" @submit.prevent="handleSubmit">
-        <!-- Two-column layout for desktop -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <!-- Left column - Basic info -->
-          <div class="space-y-4 lg:col-span-1">
-            <!-- Tooth and Status Card -->
-            <div class="bg-white dark:bg-slate-800 shadow-sm rounded-lg overflow-hidden">
-              <div class="px-4 py-3 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-600">
-                <h2 class="font-medium text-slate-800 dark:text-slate-200">Basic Information</h2>
+      <form @submit.prevent="handleSubmit" class="space-y-8">
+        <div v-if="error" class="flex items-start p-4 mb-4 bg-red-100 dark:bg-red-900/60 border-l-4 border-red-500 dark:border-red-600 rounded-md shadow-md text-red-700 dark:text-red-200">
+          <AlertTriangle class="h-5 w-5 mr-3 flex-shrink-0 mt-0.5" />
+          <span>{{ error }}</span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8 pr-2 custom-scrollbar-minimal">
+          <!-- Left Column: Record Details -->
+          <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white dark:bg-gray-800 p-5 sm:p-6 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
+              <div class="flex items-center text-xl font-semibold text-sky-700 dark:text-sky-400 mb-6 pb-3 border-b border-gray-300 dark:border-gray-600">
+                <FileText class="h-6 w-6 mr-3" />
+                Record Details
               </div>
-              <div class="p-4 space-y-4">
-                <!-- Tooth number -->
-                <div class="form-group">
-                  <label for="detail_tooth_number" class="form-label">
-                    <Pill class="h-3.5 w-3.5 inline mr-1 opacity-70" />
-                    Tooth Number*
-                  </label>
-                  <input 
-                    type="number" 
-                    id="detail_tooth_number" 
-                    v-model.number="formData.tooth_number" 
-                    required
-                    :disabled="isEditing"
-                    class="form-input" 
-                    placeholder="Enter tooth number"
-                  />
+              <div class="space-y-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div>
+                    <label for="detail_tooth_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Tooth Number*</label>
+                    <input type="number" id="detail_tooth_number" v-model.number="formData.tooth_number" required
+                           :disabled="isEditing"
+                           class="form-input-field disabled:bg-gray-100 dark:disabled:bg-gray-700/70 disabled:cursor-not-allowed disabled:text-gray-500 dark:disabled:text-gray-400">
+                  </div>
+                  <div>
+                    <label for="detail_record_status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Record Status*</label>
+                    <select id="detail_record_status" v-model="formData.status" required class="form-input-field">
+                      <option value="initial">Initial</option>
+                      <option value="diagnosis_planned">Diagnosis Planned</option>
+                      <option value="treatment_planned">Treatment Planned</option>
+                      <option value="undergoing_treatment">Undergoing Treatment</option>
+                      <option value="monitoring">Monitoring</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </div>
                 </div>
-                
-                <!-- Status -->
-                <div class="form-group">
-                  <label for="detail_record_status" class="form-label">
-                    <Activity class="h-3.5 w-3.5 inline mr-1 opacity-70" />
-                    Status*
-                  </label>
-                  <select id="detail_record_status" v-model="formData.status" required class="form-input">
-                    <option value="initial">Initial</option>
-                    <option value="diagnosis_planned">Diagnosis Planned</option>
-                    <option value="treatment_planned">Treatment Planned</option>
-                    <option value="undergoing_treatment">Undergoing Treatment</option>
-                    <option value="monitoring">Monitoring</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
+                <div class="sm:col-span-2">
+                  <label for="detail_condition" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Condition*</label>
+                  <select id="detail_condition" v-model="formData.condition" required class="form-input-field">
+                    <option disabled value="">Select condition</option>
+                    <option value="Healthy">Healthy</option>
+                    <option value="Decayed">Decayed</option>
+                    <option value="Filled">Filled</option>
+                    <option value="Missing">Missing</option>
+                    <option value="Cracked">Cracked</option>
+                    <option value="Wisdom">Wisdom</option>
+                    <option value="Impacted">Impacted</option>
+                    <option value="other">Other</option>
                   </select>
                 </div>
-              </div>
-            </div>
-            
-            <!-- Condition Card -->
-            <div class="bg-white dark:bg-slate-800 shadow-sm rounded-lg overflow-hidden">
-              <div class="px-4 py-3 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-600">
-                <h2 class="font-medium text-slate-800 dark:text-slate-200">Condition</h2>
-              </div>
-              <div class="p-4">
-                <div class="flex flex-wrap gap-2 mb-3">
-                  <button 
-                    v-for="condition in predefinedConditions" 
-                    :key="condition"
-                    type="button"
-                    @click="formData.condition = condition"
-                    class="px-2 py-1 text-xs rounded-full border transition-colors"
-                    :class="formData.condition === condition 
-                      ? 'bg-indigo-50 border-indigo-300 text-indigo-700 dark:bg-indigo-900/30 dark:border-indigo-500 dark:text-indigo-300' 
-                      : 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700'"
-                  >
-                    {{ condition }}
-                  </button>
-                  
-                  <button 
-                    type="button"
-                    @click="formData.condition = 'other'"
-                    class="px-2 py-1 text-xs rounded-full border transition-colors"
-                    :class="formData.condition === 'other'
-                      ? 'bg-indigo-50 border-indigo-300 text-indigo-700 dark:bg-indigo-900/30 dark:border-indigo-500 dark:text-indigo-300' 
-                      : 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700'"
-                  >
-                    Other
-                  </button>
+                <div v-if="formData.condition === 'other'" class="sm:col-span-2">
+                  <label for="detail_other_condition" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Specify Other Condition*</label>
+                  <input type="text" id="detail_other_condition" v-model="formData.other_condition_text" required
+                         placeholder="Describe the condition"
+                         class="form-input-field">
                 </div>
-
-                <div v-if="formData.condition === 'other'" class="form-group animate-fadeIn">
-                  <input 
-                    type="text" 
-                    id="detail_other_condition" 
-                    v-model="formData.other_condition_text" 
-                    required
-                    placeholder="Specify condition"
-                    class="form-input text-sm" 
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <!-- Notes Card -->
-            <div class="bg-white dark:bg-slate-800 shadow-sm rounded-lg overflow-hidden">
-              <div class="px-4 py-3 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-600">
-                <h2 class="font-medium text-slate-800 dark:text-slate-200">Notes</h2>
-              </div>
-              <div class="p-4">
-                <textarea 
-                  id="detail_record_notes" 
-                  v-model="formData.notes" 
-                  rows="3"
-                  placeholder="Add any general notes..."
-                  class="form-input"
-                ></textarea>
-              </div>
-            </div>
-            
-            <!-- Summary Card -->
-            <div class="bg-indigo-50 dark:bg-indigo-900/20 shadow-sm rounded-lg overflow-hidden">
-              <div class="px-4 py-3 bg-indigo-100/50 dark:bg-indigo-900/40 border-b border-indigo-200 dark:border-indigo-800/50">
-                <h2 class="font-medium text-indigo-900 dark:text-indigo-200 flex items-center">
-                  <CheckCircle2 class="h-4 w-4 mr-1.5 text-indigo-600 dark:text-indigo-400" />
-                  Summary
-                </h2>
-              </div>
-              <div class="p-4 text-sm">
-                <div class="flex justify-between mb-2">
-                  <span class="text-slate-500 dark:text-slate-400">Tooth:</span>
-                  <span class="font-medium text-slate-800 dark:text-slate-200">
-                    #{{ formData.tooth_number || '—' }}
-                  </span>
-                </div>
-                <div class="flex justify-between mb-2">
-                  <span class="text-slate-500 dark:text-slate-400">Condition:</span>
-                  <span class="font-medium text-slate-800 dark:text-slate-200">
-                    {{ formData.condition === 'other' ? formData.other_condition_text : formData.condition || '—' }}
-                  </span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-slate-500 dark:text-slate-400">Treatments:</span>
-                  <span class="font-medium text-slate-800 dark:text-slate-200">
-                    {{ formData.treatments?.length || 0 }}
-                  </span>
+                <div class="sm:col-span-2">
+                  <label for="detail_record_notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">General Notes</label>
+                  <textarea id="detail_record_notes" v-model="formData.notes" rows="4"
+                            placeholder="Add any general notes for this dental record..."
+                            class="form-input-field"></textarea>
                 </div>
               </div>
             </div>
           </div>
-          
-          <!-- Right column - Treatments -->
-          <div class="lg:col-span-2">
-            <div class="bg-white dark:bg-slate-800 shadow-sm rounded-lg overflow-hidden">
-              <div class="px-4 py-3 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-600 flex justify-between items-center">
-                <h2 class="font-medium text-slate-800 dark:text-slate-200 flex items-center">
-                  <Stethoscope class="h-4 w-4 mr-1.5 opacity-70" />
+
+          <!-- Right Column: Treatments -->
+          <div class="lg:col-span-3 space-y-6">
+            <div class="sticky top-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md p-4 rounded-lg shadow-md z-10 border border-gray-200 dark:border-gray-700">
+              <div class="flex justify-between items-center">
+                <h4 class="text-xl font-semibold text-sky-700 dark:text-sky-400 flex items-center">
+                  <ListChecks class="h-6 w-6 mr-3" />
                   Treatments
-                </h2>
-                <button 
-                  type="button" 
-                  @click="addTreatment"
-                  class="text-xs flex items-center px-2 py-1 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 dark:bg-indigo-900/40 dark:hover:bg-indigo-900/60 dark:text-indigo-300 rounded transition-colors"
-                >
-                  <Plus class="h-3.5 w-3.5 mr-1" />
-                  Add
-                </button>
-              </div>
-              
-              <!-- Empty state -->
-              <div v-if="!formData.treatments || formData.treatments.length === 0" 
-                  class="p-8 text-center">
-                <Stethoscope class="mx-auto h-8 w-8 text-slate-300 dark:text-slate-600 mb-2" />
-                <p class="text-sm text-slate-500 dark:text-slate-400">No treatments added yet</p>
-                <button 
-                  type="button" 
-                  @click="addTreatment"
-                  class="mt-3 text-xs px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
-                >
+                </h4>
+                <button type="button" @click="addTreatment"
+                        class="flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 dark:focus:ring-offset-gray-900 transition-colors">
+                  <PlusCircle class="h-5 w-5 mr-2" />
                   Add Treatment
                 </button>
               </div>
-              
-              <!-- Treatment accordion list -->
-              <div v-else class="divide-y divide-slate-200 dark:divide-slate-700">
-                <div v-for="(treatment, treatmentIndex) in formData.treatments" 
-                    :key="treatmentIndex"
-                    class="relative">
-                  <!-- Treatment header -->
-                  <button 
-                    type="button"
-                    @click="toggleTreatment(treatmentIndex)"
-                    class="w-full p-3 flex items-center justify-between focus:outline-none text-left hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors"
-                  >
-                    <div class="flex items-center">
-                      <div class="h-6 w-6 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-xs font-medium mr-2">
-                        {{ treatmentIndex + 1 }}
-                      </div>
-                      <div class="text-sm">
-                        <span class="font-medium text-slate-800 dark:text-slate-200">
-                          {{ getTreatmentTypeLabel(treatment.treatment_type) || 'New Treatment' }}
-                        </span>
-                        <span v-if="treatment.cost" class="text-xs text-slate-500 dark:text-slate-400 ml-2">
-                          ${{ treatment.cost }}
-                        </span>
-                      </div>
-                    </div>
-                    <div class="flex items-center">
-                      <span v-if="treatment.steps && treatment.steps.length" class="mr-3 px-1.5 py-0.5 text-xs bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 rounded-full">
-                        {{ treatment.steps.length }}
-                      </span>
-                      <ChevronDown v-if="!treatment._expanded" class="h-4 w-4 text-slate-400" />
-                      <ChevronUp v-else class="h-4 w-4 text-slate-400" />
-                    </div>
-                    
-                    <!-- Delete button (absolutely positioned) -->
-                    <button 
-                      type="button" 
-                      @click.stop="removeTreatment(treatmentIndex)"
-                      class="absolute top-3 right-10 p-1 rounded-full text-slate-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
-                    >
-                      <Trash2 class="h-3.5 w-3.5" />
-                    </button>
-                  </button>
-                  
-                  <!-- Treatment details -->
-                  <div v-if="treatment._expanded" class="p-3 pt-0 bg-slate-50/50 dark:bg-slate-800/50 animate-fadeIn">
-                    <!-- Compact form grid -->
-                    <div class="grid grid-cols-2 gap-3 mt-2 mb-3">
-                      <div class="form-group">
-                        <label :for="`detail_treatment_type_${treatmentIndex}`" class="form-label-sm">Type*</label>
-                        <select 
-                          :id="`detail_treatment_type_${treatmentIndex}`" 
-                          v-model="treatment.treatment_type" 
-                          required 
-                          class="form-input-sm"
-                        >
-                          <option disabled value="">Select treatment</option>
-                          <option value="filling">Filling</option>
-                          <option value="root_canal">Root Canal</option>
-                          <option value="extraction">Extraction</option>
-                          <option value="crown">Crown</option>
-                          <option value="cleaning">Cleaning</option>
-                          <option value="bridge">Bridge</option>
-                          <option value="implant">Implant</option>
-                          <option value="orthodontics">Orthodontics</option>
-                          <option value="other_treatment">Other</option>
-                        </select>
-                      </div>
-                      
-                      <div class="form-group">
-                        <label :for="`detail_treatment_cost_${treatmentIndex}`" class="form-label-sm">Cost</label>
-                        <div class="relative">
-                          <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-                            <DollarSign class="h-3.5 w-3.5 text-slate-400" />
-                          </div>
-                          <input 
-                            type="number" 
-                            step="0.01" 
-                            :id="`detail_treatment_cost_${treatmentIndex}`" 
-                            v-model.number="treatment.cost"
-                            placeholder="0.00"
-                            class="form-input-sm pl-6"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div class="col-span-2">
-                        <label :for="`detail_treatment_notes_${treatmentIndex}`" class="form-label-sm">Notes</label>
-                        <textarea 
-                          :id="`detail_treatment_notes_${treatmentIndex}`" 
-                          v-model="treatment.notes" 
-                          rows="2"
-                          placeholder="Add treatment notes..."
-                          class="form-input-sm"
-                        ></textarea>
-                      </div>
-                    </div>
-                    
-                    <!-- X-ray section -->
-                    <div class="flex items-center justify-between mb-3 text-sm">
-                      <label class="flex items-center cursor-pointer">
-                        <input 
-                          :id="`detail_xray_taken_${treatmentIndex}`" 
-                          type="checkbox" 
-                          v-model="treatment.xray_taken"
-                          class="sr-only"
-                        />
-                        <span class="relative w-8 h-4 bg-slate-200 rounded-full transition-colors duration-200 ease-in-out dark:bg-slate-700"
-                              :class="{'bg-indigo-500 dark:bg-indigo-600': treatment.xray_taken}">
-                          <span class="absolute left-0 w-4 h-4 bg-white rounded-full transition-transform duration-200 ease-in-out transform dark:bg-slate-300"
-                                :class="{'translate-x-4': treatment.xray_taken}">
-                          </span>
-                        </span>
-                        <span class="ml-2 text-xs text-slate-700 dark:text-slate-300">X-Ray</span>
-                      </label>
-                      
-                      <div v-if="treatment.xray_image_url" class="text-xs">
-                        <button 
-                          type="button"
-                          @click="openImagePreview(treatment.xray_image_url)"
-                          class="text-indigo-600 dark:text-indigo-400 hover:underline mr-2"
-                        >
-                          <Image class="h-3.5 w-3.5 inline mr-1" />
-                          View
-                        </button>
-                        <button 
-                          type="button"
-                          @click="removeXrayImage(treatmentIndex)"
-                          class="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 class="h-3.5 w-3.5 inline" />
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div v-if="treatment.xray_taken && !treatment.xray_image_url" class="mb-3 animate-fadeIn">
-                      <label :for="`detail_xray_image_input_${treatmentIndex}`" 
-                             class="flex justify-center items-center p-2 border border-dashed border-slate-300 dark:border-slate-600 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-500 transition-colors cursor-pointer">
-                        <div class="text-center">
-                          <Image class="mx-auto h-6 w-6 text-slate-400" />
-                          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Click to upload X-ray image</p>
-                        </div>
-                        <input :id="`detail_xray_image_input_${treatmentIndex}`" 
-                               type="file" 
-                               class="sr-only" 
-                               accept="image/*"
-                               @change="handleFileUpload($event, treatmentIndex)">
-                      </label>
-                    </div>
+            </div>
 
-                    <!-- Steps section -->
-                    <div class="border-t border-slate-200 dark:border-slate-700 pt-3 mt-3">
-                      <div class="flex justify-between items-center mb-2">
-                        <h3 class="text-xs font-medium text-slate-700 dark:text-slate-300">
-                          <ListChecks class="h-3.5 w-3.5 inline mr-1" />
-                          Steps
-                        </h3>
-                        <button 
-                          type="button" 
-                          @click="addStep(treatmentIndex)"
-                          class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
-                        >
-                          <Plus class="h-3 w-3 inline mr-0.5" />
-                          Add
-                        </button>
+            <div v-if="!formData.treatments || formData.treatments.length === 0" class="bg-slate-100 dark:bg-gray-800/60 p-6 rounded-lg text-center text-slate-500 dark:text-slate-400 shadow border border-gray-200 dark:border-gray-700">
+                <Info class="h-10 w-10 mx-auto mb-3 text-slate-400 dark:text-slate-500" />
+                <p class="font-medium">No treatments added yet.</p>
+                <p class="text-sm">Click "Add Treatment" to get started.</p>
+            </div>
+
+            <div v-for="(treatment, treatmentIndex) in formData.treatments" :key="treatmentIndex"
+                 class="bg-white dark:bg-gray-800 p-5 sm:p-6 rounded-xl shadow-xl mb-6 border border-gray-200 dark:border-gray-700">
+              
+              <div class="flex justify-between items-center mb-5 pb-3 border-b border-gray-300 dark:border-gray-600">
+                <h4 class="text-lg font-semibold text-sky-600 dark:text-sky-400 flex items-center">
+                  <Stethoscope class="h-5 w-5 mr-2.5"/>
+                  Treatment {{ treatmentIndex + 1 }}
+                </h4>
+                <button v-if="formData.treatments.length > 0" type="button" @click="removeTreatment(treatmentIndex)"
+                        class="flex items-center text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xs font-medium px-2 py-1 rounded-md hover:bg-red-100 dark:hover:bg-red-700/50 transition-colors">
+                  <Trash2 class="h-4 w-4 mr-1" />
+                  Remove
+                </button>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                  <label :for="`detail_treatment_type_${treatmentIndex}`" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Treatment Type*</label>
+                  <select :id="`detail_treatment_type_${treatmentIndex}`" v-model="treatment.treatment_type" required class="form-input-field">
+                    <option disabled value="">Select treatment</option>
+                    <option value="filling">Filling</option>
+                    <option value="root_canal">Root Canal</option>
+                    <option value="extraction">Extraction</option>
+                    <option value="crown">Crown</option>
+                    <option value="cleaning">Cleaning</option>
+                    <option value="bridge">Bridge</option>
+                    <option value="implant">Implant</option>
+                    <option value="orthodontics">Orthodontics</option>
+                    <option value="other_treatment">Other (Specify)</option>
+                  </select>
+                </div>
+                <div>
+                  <label :for="`detail_treatment_cost_${treatmentIndex}`" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Estimated Cost</label>
+                  <input type="number" step="0.01" :id="`detail_treatment_cost_${treatmentIndex}`" v-model.number="treatment.cost"
+                         placeholder="0.00"
+                         class="form-input-field">
+                </div>
+              </div>
+              <div class="mt-5">
+                <label :for="`detail_treatment_notes_${treatmentIndex}`" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Treatment Notes</label>
+                <textarea :id="`detail_treatment_notes_${treatmentIndex}`" v-model="treatment.notes" rows="3"
+                          placeholder="Add any notes specific to this treatment..."
+                          class="form-input-field"></textarea>
+              </div>
+              <div class="mt-5 flex items-center">
+                <input :id="`detail_xray_taken_${treatmentIndex}`" type="checkbox" v-model="treatment.xray_taken"
+                       class="h-4 w-4 text-sky-600 border-gray-300 dark:border-gray-500 rounded focus:ring-sky-500 dark:bg-gray-700 dark:focus:ring-sky-600 dark:ring-offset-gray-800 cursor-pointer">
+                <label :for="`detail_xray_taken_${treatmentIndex}`" class="ml-2 block text-sm text-gray-700 dark:text-gray-300 cursor-pointer">X-Ray Taken</label>
+              </div>
+              <div v-if="treatment.xray_taken" class="mt-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">X-Ray Image</label>
+                <div class="mt-1 flex justify-center px-6 pt-8 pb-8 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg hover:border-sky-500 dark:hover:border-sky-400 transition-colors group">
+                  <div class="space-y-1 text-center">
+                    <UploadCloud class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 group-hover:text-sky-500 dark:group-hover:text-sky-400 transition-colors" />
+                    <div class="flex text-sm text-gray-600 dark:text-gray-400">
+                      <label :for="`detail_xray_image_input_${treatmentIndex}`" class="relative cursor-pointer bg-white dark:bg-gray-800 rounded-md font-medium text-sky-600 dark:text-sky-400 hover:text-sky-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-sky-500 dark:ring-offset-gray-900">
+                        <span>Upload a file</span>
+                        <input :id="`detail_xray_image_input_${treatmentIndex}`" name="xray_image" type="file" @change="handleFileUpload($event, treatmentIndex)" class="sr-only">
+                      </label>
+                      <p class="pl-1">or drag and drop</p>
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-500">PNG, JPG, GIF up to 5MB</p>
+                    <div v-if="treatment.xray_image_name || treatment.xray_image_url" class="pt-2">
+                      <p v-if="treatment.xray_image_name" class="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
+                        New: {{ treatment.xray_image_name }}
+                      </p>
+                      <p v-else-if="treatment.xray_image_url" class="text-sm text-sky-600 dark:text-sky-400 truncate max-w-xs" :title="treatment.xray_image_url">
+                        Current: {{ treatment.xray_image_url.substring(treatment.xray_image_url.lastIndexOf('/') + 1) }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Treatment Steps Section -->
+              <div class="mt-8 pt-6 border-t border-gray-300 dark:border-gray-600">
+                <div class="flex justify-between items-center mb-4">
+                  <h5 class="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center">
+                    <ListOrdered class="h-5 w-5 mr-2.5 text-gray-600 dark:text-gray-300"/>
+                    Treatment Steps
+                  </h5>
+                  <button type="button" @click="addStep(treatmentIndex)"
+                          class="flex items-center px-3.5 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 dark:focus:ring-offset-gray-900 transition-colors">
+                    <Plus class="h-4 w-4 mr-1.5" />
+                    Add Step
+                  </button>
+                </div>
+                <div v-if="!treatment.steps || treatment.steps.length === 0" class="text-sm text-center text-gray-500 dark:text-gray-400 py-4 px-3 bg-slate-100 dark:bg-gray-700/50 rounded-md shadow-sm">
+                  No steps added for this treatment.
+                </div>
+                <div v-else class="space-y-4">
+                  <div v-for="(step, stepIndex) in treatment.steps" :key="stepIndex" class="bg-slate-50 dark:bg-gray-700/70 p-4 rounded-lg shadow-md border border-gray-200 dark:border-gray-600/80">
+                    <div class="flex justify-between items-center mb-3">
+                       <p class="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center">
+                         <ChevronRight class="h-4 w-4 mr-1.5 text-gray-500 dark:text-gray-400"/>
+                         Step {{ stepIndex + 1 }}
+                       </p>
+                       <button type="button" @click="removeStep(treatmentIndex, stepIndex)"
+                               class="flex items-center text-pink-500 hover:text-pink-700 dark:hover:text-pink-400 text-xs font-medium hover:bg-pink-100 dark:hover:bg-pink-700/40 p-1 rounded-md transition-colors">
+                               <X class="h-3.5 w-3.5 mr-0.5"/> Remove
+                       </button>
+                    </div>
+                    <div class="space-y-3">
+                      <div>
+                        <label :for="`detail_step_desc_${treatmentIndex}_${stepIndex}`" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Description*</label>
+                        <input type="text" :id="`detail_step_desc_${treatmentIndex}_${stepIndex}`" v-model="step.description" required placeholder="Step description"
+                               class="form-input-field text-sm py-1.5">
                       </div>
-                      
-                      <!-- Empty steps message -->
-                      <div v-if="!treatment.steps || treatment.steps.length === 0" class="text-center text-xs text-slate-500 dark:text-slate-400 py-2">
-                        No steps added
-                      </div>
-                      
-                      <!-- Compact steps list -->
-                      <div v-else class="space-y-2">
-                        <div v-for="(step, stepIndex) in treatment.steps" :key="stepIndex" 
-                             class="border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-800 shadow-sm">
-                          <div class="flex justify-between items-center px-2 py-1.5 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
-                            <div class="flex items-center">
-                              <div class="flex-shrink-0 h-4 w-4 rounded-full mr-1.5 flex items-center justify-center text-[10px] font-medium"
-                                   :class="getStepStatusColor(step.status)">
-                                {{ stepIndex + 1 }}
-                              </div>
-                              <div class="text-xs font-medium text-slate-600 dark:text-slate-300">
-                                {{ formatStepStatus(step.status) }}
-                              </div>
-                            </div>
-                            <button 
-                              type="button" 
-                              @click="removeStep(treatmentIndex, stepIndex)"
-                              class="text-slate-400 hover:text-red-500"
-                            >
-                              <X class="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                          
-                          <div class="p-2 space-y-2">
-                            <input 
-                              type="text" 
-                              :id="`detail_step_desc_${treatmentIndex}_${stepIndex}`" 
-                              v-model="step.description" 
-                              required 
-                              placeholder="Step description"
-                              class="form-input-sm text-xs"
-                            >
-                            
-                            <div class="grid grid-cols-2 gap-2">
-                              <div class="relative">
-                                <Calendar class="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-slate-400" />
-                                <input 
-                                  type="date" 
-                                  :id="`detail_step_date_${treatmentIndex}_${stepIndex}`" 
-                                  v-model="step.step_date"
-                                  class="form-input-sm pl-6 text-xs"
-                                >
-                              </div>
-                              <select 
-                                :id="`detail_step_status_${treatmentIndex}_${stepIndex}`" 
-                                v-model="step.status" 
-                                required
-                                class="form-input-sm text-xs"
-                              >
-                                <option value="pending">Pending</option>
-                                <option value="in_progress">In Progress</option>
-                                <option value="done">Done</option>
-                                <option value="skipped">Skipped</option>
-                              </select>
-                            </div>
-                          </div>
+                      <div class="grid grid-cols-2 gap-4">
+                        <div>
+                          <label :for="`detail_step_date_${treatmentIndex}_${stepIndex}`" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Date</label>
+                          <input type="date" :id="`detail_step_date_${treatmentIndex}_${stepIndex}`" v-model="step.step_date"
+                                 class="form-input-field text-sm py-1.5">
+                        </div>
+                        <div>
+                          <label :for="`detail_step_status_${treatmentIndex}_${stepIndex}`" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Status*</label>
+                          <select :id="`detail_step_status_${treatmentIndex}_${stepIndex}`" v-model="step.status" required
+                                  class="form-input-field text-sm py-1.5">
+                            <option value="pending">Pending</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="done">Done</option>
+                            <option value="skipped">Skipped</option>
+                          </select>
                         </div>
                       </div>
                     </div>
@@ -453,39 +232,35 @@
             </div>
           </div>
         </div>
-      </form>
-    </div>
 
-    <!-- Image preview modal -->
-    <div v-if="previewImage" 
-         class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
-         @click="previewImage = null">
-      <div class="max-w-3xl max-h-[80vh] relative">
-        <img :src="previewImage" alt="X-ray preview" class="max-w-full max-h-full rounded-md object-contain" />
-        <button 
-          type="button"
-          @click.stop="previewImage = null"
-          class="absolute top-2 right-2 bg-black/50 text-white p-1 rounded-full"
-        >
-          <X class="h-5 w-5" />
-        </button>
-      </div>
+        <!-- Action Buttons -->
+        <div class="flex justify-end space-x-4 pt-8 pb-4 border-t border-gray-300 dark:border-gray-700 mt-10">
+          <button type="button" @click="$emit('back-to-list')"
+                  class="px-5 py-2.5 border border-gray-400 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 dark:focus:ring-offset-gray-900 transition-colors">
+            Cancel
+          </button>
+          <button type="submit" :disabled="isSubmitting"
+                  class="px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 disabled:opacity-70 disabled:cursor-not-allowed flex items-center transition-colors dark:focus:ring-offset-gray-900">
+            <LoaderCircle v-if="isSubmitting" class="animate-spin h-5 w-5 mr-2.5" />
+            {{ isSubmitting ? 'Saving...' : (isEditing ? 'Update Record' : 'Save Record') }}
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted, computed, nextTick } from 'vue';
+import { ref, watch, onMounted, toRefs } from 'vue';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { 
-  ClipboardEdit, LoaderCircle, Image, ArrowLeft, CheckCircle, CheckCircle2,
-  Circle, Trash2, X, Calendar, Plus, Pill, AlertCircle, 
-  ListChecks, Activity, DollarSign, Save, ChevronDown, ChevronUp, Stethoscope
+  X, ClipboardEdit, LoaderCircle, Image, ArrowLeft, 
+  FileText, ListChecks, PlusCircle, Info, Stethoscope, Trash2, UploadCloud, ListOrdered, Plus, ChevronRight, AlertTriangle 
 } from 'lucide-vue-next';
 
 const props = defineProps({
-  recordDataProp: { 
+  recordDataProp: {
     type: Object,
     default: null
   },
@@ -493,11 +268,11 @@ const props = defineProps({
     type: [String, Number],
     required: true
   },
-  initialToothNumberProp: { 
+  initialToothNumberProp: {
     type: [String, Number],
     default: null
   },
-  isCreatingNew: { 
+  isCreatingNew: {
     type: Boolean,
     default: false
   }
@@ -505,15 +280,10 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'record-saved', 'error', 'back-to-list']);
 
-// Add debug flags
-const showDebugInfo = ref(true); // Set to true for debugging
-const recordDataDebug = ref('No data received');
-
 const config = useRuntimeConfig();
 const isEditing = ref(false);
 const error = ref(null);
 const isSubmitting = ref(false);
-const previewImage = ref(null);
 
 const predefinedConditions = ["Healthy", "Decayed", "Filled", "Missing", "Cracked", "Wisdom", "Impacted"];
 
@@ -531,8 +301,7 @@ const defaultTreatment = () => ({
   xray_image: null,
   xray_image_name: '',
   xray_image_url: '',
-  steps: [],
-  _expanded: true // UI state for expanded/collapsed view
+  steps: []
 });
 
 const initialFormData = () => ({
@@ -545,30 +314,6 @@ const initialFormData = () => ({
 });
 
 const formData = ref(initialFormData());
-
-const toggleTreatment = (index) => {
-  formData.value.treatments[index]._expanded = !formData.value.treatments[index]._expanded;
-};
-
-const openImagePreview = (url) => {
-  previewImage.value = url;
-};
-
-const getTreatmentSummary = () => {
-  if (!formData.value.treatments || formData.value.treatments.length === 0) {
-    return '';
-  }
-  
-  const types = formData.value.treatments
-    .filter(t => t.treatment_type)
-    .map(t => getTreatmentTypeLabel(t.treatment_type));
-  
-  if (types.length === 0) return '';
-  
-  const uniqueTypes = [...new Set(types)];
-  if (uniqueTypes.length <= 2) return `(${uniqueTypes.join(', ')})`;
-  return `(${uniqueTypes.slice(0, 2).join(', ')} and more)`;
-};
 
 const getAccessTokenCookie = () => {
   const token = Cookies.get('dental_access_token');
@@ -600,34 +345,14 @@ const handleFileUpload = (event, treatmentIndex) => {
       return;
     }
 
-    // Create preview URL
-    currentTreatment.xray_image_url = URL.createObjectURL(file);
     currentTreatment.xray_image = file;
     currentTreatment.xray_image_name = file.name;
+    currentTreatment.xray_image_url = '';
     error.value = null; 
   } else {
     currentTreatment.xray_image = null;
     currentTreatment.xray_image_name = '';
   }
-};
-
-const handleFileDrop = (event, treatmentIndex) => {
-  const dt = event.dataTransfer;
-  const file = dt.files[0];
-  
-  if (file) {
-    handleFileUpload({ target: { files: [file] } }, treatmentIndex);
-  }
-};
-
-const removeXrayImage = (treatmentIndex) => {
-  const currentTreatment = formData.value.treatments[treatmentIndex];
-  if (currentTreatment.xray_image_url && currentTreatment.xray_image) {
-    URL.revokeObjectURL(currentTreatment.xray_image_url);
-  }
-  currentTreatment.xray_image = null;
-  currentTreatment.xray_image_name = '';
-  currentTreatment.xray_image_url = '';
 };
 
 const addTreatment = () => {
@@ -656,140 +381,46 @@ const removeStep = (treatmentIndex, stepIndex) => {
   }
 };
 
-const getTreatmentTypeLabel = (type) => {
-  const labels = {
-    'filling': 'Filling',
-    'root_canal': 'Root Canal',
-    'extraction': 'Extraction',
-    'crown': 'Crown',
-    'cleaning': 'Cleaning',
-    'bridge': 'Bridge',
-    'implant': 'Implant',
-    'orthodontics': 'Orthodontics',
-    'other_treatment': 'Other Treatment'
-  };
-  return labels[type] || type || 'Not specified';
-};
-
-const getStatusBadgeClass = (status) => {
-  const classes = {
-    'initial': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-    'diagnosis_planned': 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-    'treatment_planned': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300',
-    'undergoing_treatment': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
-    'monitoring': 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
-    'completed': 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
-    'cancelled': 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
-  };
-  return classes[status] || classes['initial'];
-};
-
-const formatStatus = (status) => {
-  return status
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-};
-
-const formatStepStatus = (status) => {
-  const labels = {
-    'pending': 'Pending',
-    'in_progress': 'In Progress',
-    'done': 'Done',
-    'skipped': 'Skipped'
-  };
-  return labels[status] || status;
-};
-
-const getStepStatusColor = (status) => {
-  const colors = {
-    'pending': 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300',
-    'in_progress': 'bg-blue-200 text-blue-700 dark:bg-blue-800 dark:text-blue-300',
-    'done': 'bg-green-200 text-green-700 dark:bg-green-800 dark:text-green-300',
-    'skipped': 'bg-red-200 text-red-700 dark:bg-red-800 dark:text-red-300'
-  };
-  return colors[status] || colors['pending'];
-};
-
-const getStepStatusBadgeClass = (status) => {
-  const colors = {
-    'pending': 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300',
-    'in_progress': 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-    'done': 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
-    'skipped': 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
-  };
-  return colors[status] || colors['pending'];
-};
-
-// Force refresh the form data if needed
-const forceRefreshForm = () => {
-  if (!formData.value.id && props.recordDataProp?.id) {
-    console.log("Force refreshing form with record data:", props.recordDataProp);
-    processRecordData(props.recordDataProp);
-  }
-};
-
-// Create a separate function to process the record data for reusability
-const processRecordData = (data) => {
-  if (data && data.id) {
-    recordDataDebug.value = JSON.stringify(data).substring(0, 100) + '...';
-    console.log("Processing record data:", data);
-    
+watch(() => props.recordDataProp, (newVal) => {
+  if (newVal && newVal.id) {
     isEditing.value = true;
-    let conditionValue = data.condition || '';
+    let conditionValue = newVal.condition || '';
     let otherConditionTextValue = '';
-    
     if (conditionValue && !predefinedConditions.includes(conditionValue)) {
       otherConditionTextValue = conditionValue;
       conditionValue = 'other';
     }
 
-    const processedTreatments = (data.treatments && data.treatments.length > 0)
-      ? data.treatments.map(t => ({
-          ...defaultTreatment(),
-          ...t,
-          xray_image: null,
-          xray_image_name: t.xray_image_url ? 'Image loaded' : (t.xray_image_name || ''),
-          xray_image_url: t.xray_image_url || '',
-          steps: t.steps 
-            ? t.steps.map(s => ({ ...defaultStep(), ...s })) 
-            : [],
-          _expanded: true
-        }))
-      : [defaultTreatment()];
-
-    // Explicitly create a new object to ensure reactivity
     formData.value = {
-      id: data.id,
-      tooth_number: data.tooth_number,
+      id: newVal.id,
+      tooth_number: newVal.tooth_number,
       condition: conditionValue,
       other_condition_text: otherConditionTextValue,
-      notes: data.notes || '',
-      status: data.status || 'initial',
-      treatments: processedTreatments
+      notes: newVal.notes || '',
+      status: newVal.status || 'initial',
+      treatments: (newVal.treatments && newVal.treatments.length > 0)
+        ? JSON.parse(JSON.stringify(newVal.treatments)).map(t => ({
+            ...defaultTreatment(),
+            ...t,
+            xray_image: null, 
+            xray_image_name: t.xray_image_url ? '' : (t.xray_image_name || ''),
+            steps: t.steps ? JSON.parse(JSON.stringify(t.steps)).map(s => ({ ...defaultStep(), ...s })) : []
+          }))
+        : [defaultTreatment()]
     };
-    
-    console.log("Form data updated:", formData.value);
   } else {
-    recordDataDebug.value = 'No valid record data';
     isEditing.value = false;
     formData.value = {
       ...initialFormData(),
-      tooth_number: props.initialToothNumberProp || '',
+      tooth_number: props.initialToothNumberProp || formData.value.tooth_number,
     };
     if (!formData.value.treatments || formData.value.treatments.length === 0) {
-      formData.value.treatments = [defaultTreatment()];
+        formData.value.treatments = [defaultTreatment()];
     }
   }
   error.value = null;
-};
-
-// Watch for prop changes with immediate effect
-watch(() => props.recordDataProp, (newVal) => {
-  processRecordData(newVal);
 }, { immediate: true, deep: true });
 
-// Watch for prop changes to update the form data
 watch(() => props.initialToothNumberProp, (newVal) => {
   if (!isEditing.value && newVal && formData.value.tooth_number !== newVal) {
     formData.value.tooth_number = newVal;
@@ -810,39 +441,34 @@ const handleSubmit = async () => {
     isSubmitting.value = false;
     return;
   }
-  
   if (!formData.value.condition || (formData.value.condition === 'other' && !formData.value.other_condition_text)) {
-    error.value = formData.value.condition === 'other' ? 'Please specify the other condition.' : 'Condition is required.';
+    error.value = 'Condition is required.';
+     if(formData.value.condition === 'other' && !formData.value.other_condition_text) {
+        error.value = 'Please specify the other condition.';
+    }
     isSubmitting.value = false;
     return;
   }
   
-  // Validate treatments and steps
   if (formData.value.treatments && formData.value.treatments.length > 0) {
     for (let i = 0; i < formData.value.treatments.length; i++) {
       const treatment = formData.value.treatments[i];
       if (!treatment.treatment_type) {
         error.value = `Treatment type is required for Treatment #${i + 1}.`;
         isSubmitting.value = false;
-        // Auto-expand the treatment with the error
-        treatment._expanded = true;
         return;
       }
-      
       if (treatment.steps) {
         for (let j = 0; j < treatment.steps.length; j++) {
           const step = treatment.steps[j];
           if (!step.description) {
             error.value = `Description is required for Step #${j + 1} in Treatment #${i + 1}.`;
             isSubmitting.value = false;
-            // Auto-expand the treatment with the error
-            treatment._expanded = true;
             return;
           }
           if (!step.status) {
              error.value = `Status is required for Step #${j + 1} in Treatment #${i + 1}.`;
              isSubmitting.value = false;
-             treatment._expanded = true;
              return;
           }
         }
@@ -855,47 +481,39 @@ const handleSubmit = async () => {
     finalCondition = formData.value.other_condition_text;
   }
 
-  // Prepare payload (strip UI-specific properties)
   const payload = {
     tooth_number: formData.value.tooth_number,
     condition: finalCondition,
     notes: formData.value.notes,
     status: formData.value.status,
-    treatments: formData.value.treatments.map(t => {
-      const { _expanded, ...treatment } = t;
-      return {
-        ...treatment,
-        treatment_type: treatment.treatment_type,
-        cost: treatment.cost ? parseFloat(treatment.cost) : undefined,
-        notes: treatment.notes,
-        xray_taken: treatment.xray_taken,
-        xray_image_url: treatment.xray_taken 
-          ? (treatment.xray_image ? `PENDING_UPLOAD_${treatment.xray_image_name}` : treatment.xray_image_url || undefined) 
-          : undefined,
-        steps: treatment.steps?.map((step, index) => ({
-          step_order: index + 1,
-          description: step.description,
-          step_date: step.step_date || null,
-          status: step.status
-        }))
-      };
-    })
+    treatments: formData.value.treatments.map(t => ({
+      treatment_type: t.treatment_type,
+      cost: t.cost ? parseFloat(t.cost) : undefined,
+      notes: t.notes,
+      xray_taken: t.xray_taken,
+      xray_image_url: t.xray_taken 
+        ? (t.xray_image ? `PENDING_UPLOAD_${t.xray_image_name}` : t.xray_image_url || undefined) 
+        : undefined,
+      steps: t.steps.map((step, index) => ({
+        step_order: index + 1,
+        description: step.description,
+        step_date: step.step_date || null,
+        status: step.status
+      }))
+    }))
   };
-
-  // Clean payload
-  Object.keys(payload).forEach(key => {
+  
+ Object.keys(payload).forEach(key => {
     if (payload[key] === undefined || payload[key] === '') {
       if (key !== 'notes') {
         delete payload[key];
       }
     }
   });
-  
-  payload.treatments = payload.treatments.map(treatment => {
+   payload.treatments = payload.treatments.map(treatment => {
     const cleanedTreatment = { ...treatment };
     Object.keys(cleanedTreatment).forEach(tKey => {
-      if (cleanedTreatment[tKey] === undefined || cleanedTreatment[tKey] === '' || 
-         (Array.isArray(cleanedTreatment[tKey]) && cleanedTreatment[tKey].length === 0)) {
+      if (cleanedTreatment[tKey] === undefined || cleanedTreatment[tKey] === '' || (Array.isArray(cleanedTreatment[tKey]) && cleanedTreatment[tKey].length === 0) ) {
         if (tKey === 'steps' && Array.isArray(cleanedTreatment[tKey]) && cleanedTreatment[tKey].length === 0) {
            delete cleanedTreatment[tKey]; 
         } else if (tKey !== 'notes' && (cleanedTreatment[tKey] === undefined || cleanedTreatment[tKey] === '')) {
@@ -909,7 +527,6 @@ const handleSubmit = async () => {
         Object.keys(cleanedStep).forEach(sKey => {
           if (cleanedStep[sKey] === undefined || cleanedStep[sKey] === '' || cleanedStep[sKey] === null) {
              if (sKey === 'step_date' && cleanedStep[sKey] === null) {
-                // keep it as null
              } else if (sKey !== 'description' && (cleanedStep[sKey] === undefined || cleanedStep[sKey] === '' || cleanedStep[sKey] === null)) {
                 delete cleanedStep[sKey];
              }
@@ -928,21 +545,9 @@ const handleSubmit = async () => {
       'Content-Type': 'application/json'
     };
     
-    let url = `${config.public.API_BASE_URL}/patients/${props.patientId}/dental-records`;
-    let method = 'post';
+    const url = `${config.public.API_BASE_URL}/patients/${props.patientId}/dental-records`;
     
-    // Use PUT for updates if we have a record ID
-    if (isEditing.value && formData.value.id) {
-      url = `${url}/${formData.value.id}`;
-      method = 'put';
-    }
-    
-    const response = await axios({
-      method,
-      url,
-      data: payload,
-      headers
-    });
+    const response = await axios.post(url, payload, { headers });
 
     emit('record-saved', response.data);
   } catch (err) {
@@ -978,63 +583,48 @@ const handleSubmit = async () => {
   }
 };
 
-// Enhanced initialization on mount
 onMounted(() => {
-  console.log("Component mounted with props:", {
-    recordDataProp: props.recordDataProp,
-    patientId: props.patientId,
-    initialToothNumber: props.initialToothNumberProp,
-    isCreatingNew: props.isCreatingNew
-  });
-  
-  if (props.recordDataProp) {
-    console.log("Initial record data:", props.recordDataProp);
-    nextTick(() => {
-      forceRefreshForm();
-    });
-  } else if (props.isCreatingNew) {
-    console.log("Creating new record");
-    formData.value = initialFormData();
-    isEditing.value = false;
+  if (props.isCreatingNew && !props.recordDataProp && !props.initialToothNumberProp) {
+      formData.value = initialFormData();
+      isEditing.value = false;
   }
-
-  // Add keypress to toggle debug panel
-  window.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.key === 'd') {
-      e.preventDefault();
-      showDebugInfo.value = !showDebugInfo.value;
-    }
-  });
 });
+
 </script>
 
 <style scoped>
-.form-label {
-  @apply block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1;
+.form-input-field {
+  @apply w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 dark:bg-gray-700/60 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-base transition-colors;
 }
 
-.form-label-sm {
-  @apply block text-xs font-medium text-slate-600 dark:text-slate-400 mb-0.5;
+input:disabled, select:disabled, textarea:disabled {
+  cursor: not-allowed;
+  @apply bg-gray-100 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400;
 }
 
-.form-input {
-  @apply w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 text-sm;
+.custom-scrollbar-minimal::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar-minimal::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar-minimal::-webkit-scrollbar-thumb {
+  background-color: #9ca3af;
+  border-radius: 3px;
+}
+.custom-scrollbar-minimal::-webkit-scrollbar-thumb:hover {
+  background-color: #6b7280;
 }
 
-.form-input-sm {
-  @apply w-full px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 text-xs;
+.dark .custom-scrollbar-minimal::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+}
+.dark .custom-scrollbar-minimal::-webkit-scrollbar-thumb:hover {
+  background-color: #374151;
 }
 
-.form-group {
-  @apply space-y-1;
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.15s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.form-input-field:focus {
+  @apply ring-offset-1 dark:ring-offset-gray-800 ring-offset-white;
 }
 </style>

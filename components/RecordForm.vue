@@ -582,7 +582,7 @@ onMounted(() => {
 }
 
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #4a5568; /* Tailwind gray-600 for dark mode */
+  background-color: #4a5568; /* Tailwind gray-600 for dark mode 111111111111*/
 }
 .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: #2d3748; /* Tailwind gray-700 for dark modesssss */
