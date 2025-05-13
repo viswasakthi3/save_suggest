@@ -1,0 +1,410 @@
+<template>
+  <div class="record-detail-view p-6 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+    <!-- Header: Title, Edit/Save/Cancel Buttons -->
+    <header class="flex justify-between items-center mb-8 pb-4 border-b border-gray-300 dark:border-gray-700">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-800 dark:text-white">
+          {{ isEditing ? 'Edit Record' : 'Record Details' }}
+          <span v-if="formData.tooth_number" class="text-xl text-blue-600 dark:text-blue-400">(Tooth #{{ formData.tooth_number }})</span>
+        </h1>
+        <p v-if="!isEditing && lastSaved" class="text-sm text-gray-500 dark:text-gray-400">Last updated: {{ formatDate(lastSaved) }}</p>
+      </div>
+      <div class="flex space-x-3">
+        <button v-if="!isEditing" @click="toggleEditMode(true)" class="btn btn-primary">
+          <PencilIcon class="h-5 w-5 mr-2" /> Edit
+        </button>
+        <template v-if="isEditing">
+          <button @click="handleCancel" class="btn btn-secondary">
+            <XIcon class="h-5 w-5 mr-2" /> Cancel
+          </button>
+          <button @click="handleSubmit" class="btn btn-success" :disabled="isSubmitting">
+            <SaveIcon class="h-5 w-5 mr-2" />
+            {{ isSubmitting ? 'Saving...' : 'Save Changes' }}
+          </button>
+        </template>
+      </div>
+    </header>
+
+    <!-- Global Error/Success Messages -->
+    <div v-if="globalError" class="alert alert-danger mb-6">{{ globalError }}</div>
+    <div v-if="globalSuccess" class="alert alert-success mb-6">{{ globalSuccess }}</div>
+
+    <form @submit.prevent="handleSubmit" class="space-y-10">
+      <!-- Section 1: Basic Record Information -->
+      <section class="card">
+        <div class="card-header">
+          <FileTextIcon class="h-6 w-6 mr-3 text-blue-600 dark:text-blue-400" />
+          <h2 class="card-title">Core Record Details</h2>
+        </div>
+        <div class="card-body grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Tooth Number -->
+          <FormField label="Tooth Number" :error="errors.tooth_number" required>
+            <input type="number" v-model.number="formData.tooth_number" :disabled="!isEditing || initialRecordExists" class="form-input" />
+          </FormField>
+
+          <!-- Record Status -->
+          <FormField label="Record Status" :error="errors.status" required>
+            <select v-model="formData.status" :disabled="!isEditing" class="form-select">
+              <!-- options -->
+            </select>
+          </FormField>
+
+          <!-- Condition -->
+          <FormField label="Condition" :error="errors.condition" required class="md:col-span-2">
+            <select v-model="formData.condition" :disabled="!isEditing" class="form-select">
+              <!-- options -->
+            </select>
+          </FormField>
+          <FormField v-if="formData.condition === 'other'" label="Specify Other Condition" :error="errors.other_condition_text" required class="md:col-span-2">
+            <input type="text" v-model="formData.other_condition_text" :disabled="!isEditing" class="form-input" />
+          </FormField>
+
+          <!-- General Notes -->
+          <FormField label="General Notes" :error="errors.notes" class="md:col-span-2">
+            <textarea v-model="formData.notes" :disabled="!isEditing" class="form-textarea" rows="4"></textarea>
+          </FormField>
+        </div>
+      </section>
+
+      <!-- Section 2: Treatments -->
+      <section class="card">
+        <div class="card-header flex justify-between items-center">
+          <div class="flex items-center">
+            <StethoscopeIcon class="h-6 w-6 mr-3 text-green-600 dark:text-green-400" />
+            <h2 class="card-title">Treatments</h2>
+          </div>
+          <button v-if="isEditing" type="button" @click="addTreatment" class="btn btn-outline-primary btn-sm">
+            <PlusIcon class="h-4 w-4 mr-1" /> Add Treatment
+          </button>
+        </div>
+        <div class="card-body space-y-6">
+          <div v-if="!formData.treatments || formData.treatments.length === 0" class="text-center py-6 text-gray-500 dark:text-gray-400">
+            <InfoIcon class="h-10 w-10 mx-auto mb-2 opacity-50" />
+            <p>{{ isEditing ? 'No treatments added. Click "Add Treatment" to start.' : 'No treatments recorded.' }}</p>
+          </div>
+          <div v-for="(treatment, index) in formData.treatments" :key="treatment.id || index" class="treatment-item p-5 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50 relative">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Treatment {{ index + 1 }}</h3>
+              <button v-if="isEditing" type="button" @click="removeTreatment(index)" class="btn-icon btn-icon-danger btn-sm">
+                <Trash2Icon class="h-4 w-4" />
+              </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+              <!-- Treatment Type -->
+              <FormField :label="`Type`" :error="getTreatmentFieldError(index, 'treatment_type')" required>
+                <select v-model="treatment.treatment_type" :disabled="!isEditing" class="form-select">
+                  <!-- options -->
+                </select>
+              </FormField>
+              <!-- Estimated Cost -->
+              <FormField :label="`Cost ($)`" :error="getTreatmentFieldError(index, 'cost')">
+                <input type="number" step="0.01" v-model.number="treatment.cost" :disabled="!isEditing" class="form-input" />
+              </FormField>
+              <!-- Treatment Notes -->
+              <FormField :label="`Notes`" :error="getTreatmentFieldError(index, 'notes')" class="md:col-span-2">
+                <textarea v-model="treatment.notes" :disabled="!isEditing" class="form-textarea" rows="3"></textarea>
+              </FormField>
+              <!-- X-Ray Taken -->
+              <div class="md:col-span-2">
+                <label class="flex items-center space-x-2 cursor-pointer">
+                  <input type="checkbox" v-model="treatment.xray_taken" :disabled="!isEditing" class="form-checkbox" />
+                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300">X-Ray Taken</span>
+                </label>
+              </div>
+              <!-- X-Ray Image Upload -->
+              <FormField v-if="treatment.xray_taken" label="X-Ray Image" :error="getTreatmentFieldError(index, 'xray_image')" class="md:col-span-2">
+                <div v-if="isEditing">
+                  <input type="file" @change="handleFileUpload($event, index)" class="form-file-input" />
+                  <p v-if="treatment.xray_image_name" class="text-xs text-green-600 mt-1">New: {{ treatment.xray_image_name }}</p>
+                  <p v-else-if="treatment.xray_image_url" class="text-xs text-blue-600 mt-1">Current: <a :href="treatment.xray_image_url" target="_blank" class="hover:underline">{{ getFileName(treatment.xray_image_url) }}</a></p>
+                </div>
+                <div v-else-if="treatment.xray_image_url">
+                  <a :href="treatment.xray_image_url" target="_blank" class="text-blue-600 hover:underline flex items-center">
+                    <ImageIcon class="h-4 w-4 mr-1" /> View X-Ray
+                  </a>
+                </div>
+                <p v-else class="text-sm text-gray-500 dark:text-gray-400">No X-Ray image uploaded.</p>
+              </FormField>
+            </div>
+
+            <!-- Treatment Steps (Collapsible Section) -->
+            <CollapsibleSection :title="`Treatment Steps (${treatment.steps ? treatment.steps.length : 0})`" :initiallyOpen="isEditing || (treatment.steps && treatment.steps.length > 0)" class="mt-6">
+              <div class="space-y-3">
+                <div v-if="isEditing && (!treatment.steps || treatment.steps.length === 0)" class="text-sm text-center py-3 text-gray-500 dark:text-gray-400">
+                  No steps defined.
+                </div>
+                <div v-for="(step, stepIndex) in treatment.steps" :key="step.id || stepIndex" class="step-item p-3 bg-white dark:bg-gray-700 rounded-md border border-gray-200 dark:border-gray-600">
+                  <div class="flex justify-between items-center mb-2">
+                    <p class="text-sm font-semibold text-gray-600 dark:text-gray-300">Step {{ stepIndex + 1 }}</p>
+                    <button v-if="isEditing" type="button" @click="removeStep(index, stepIndex)" class="btn-icon btn-icon-danger btn-xs">
+                      <XIcon class="h-3 w-3" />
+                    </button>
+                  </div>
+                  <FormField :label="`Description`" :error="getStepFieldError(index, stepIndex, 'description')" required>
+                    <input type="text" v-model="step.description" :disabled="!isEditing" class="form-input form-input-sm" />
+                  </FormField>
+                  <div class="grid grid-cols-2 gap-x-4 gap-y-2 mt-2">
+                    <FormField :label="`Date`" :error="getStepFieldError(index, stepIndex, 'step_date')">
+                      <input type="date" v-model="step.step_date" :disabled="!isEditing" class="form-input form-input-sm" />
+                    </FormField>
+                    <FormField :label="`Status`" :error="getStepFieldError(index, stepIndex, 'status')" required>
+                      <select v-model="step.status" :disabled="!isEditing" class="form-select form-select-sm">
+                        <!-- options -->
+                      </select>
+                    </FormField>
+                  </div>
+                </div>
+              </div>
+              <button v-if="isEditing" type="button" @click="addStep(index)" class="btn btn-outline-secondary btn-xs mt-3">
+                <PlusIcon class="h-3 w-3 mr-1" /> Add Step
+              </button>
+            </CollapsibleSection>
+          </div>
+        </div>
+      </section>
+
+      <!-- Hidden Submit Button for Enter Key -->
+      <button type="submit" class="hidden"></button>
+    </form>
+  </div>
+</template>
+
+<script setup>
+// ... (Import necessary icons: PencilIcon, SaveIcon, XIcon, FileTextIcon, StethoscopeIcon, PlusIcon, Trash2Icon, InfoIcon, ImageIcon etc.)
+// ... (Import FormField.vue, CollapsibleSection.vue components)
+
+import { ref, watch, onMounted, computed } from 'vue';
+// ... (other imports like axios, Cookies, lucide-vue-next icons as in the original)
+
+const props = defineProps({ /* ... as original ... */ });
+const emit = defineEmits([/* ... as original ... */]);
+
+const isEditing = ref(false); // Controls view/edit mode
+const initialRecordExists = ref(false); // To disable tooth_number editing if record exists
+const globalError = ref(null);
+const globalSuccess = ref(null);
+const isSubmitting = ref(false);
+const lastSaved = ref(null); // For "Last updated" info
+
+const formData = ref(initialFormData());
+const errors = ref({}); // For inline validation errors: { tooth_number: 'Error message', treatments: [{ treatment_type: 'Error' }, {}] }
+
+// --- Computed Properties ---
+const canEditToothNumber = computed(() => !initialRecordExists.value && isEditing.value);
+
+// --- Helper Functions ---
+function initialFormData() {
+  // ... (similar to original, but perhaps more streamlined for new UI)
+  // Ensure treatments and steps have unique temporary IDs if needed for v-for keys before saving
+  return {
+    tooth_number: props.initialToothNumberProp,
+    condition: '',
+    other_condition_text: '',
+    notes: '',
+    status: 'initial',
+    treatments: [] // Start with no treatments, add one if user clicks "Add Treatment"
+  };
+}
+
+function defaultTreatment() { /* ... */ }
+function defaultStep() { /* ... */ }
+
+function formatDate(dateString) { /* ... utility to format date ... */ }
+function getFileName(url) { /* ... utility to extract filename from URL ... */ }
+
+
+// --- UI Interaction ---
+function toggleEditMode(editing) {
+  isEditing.value = editing;
+  if (!editing) {
+    // Optionally revert changes if not saved, or reload original data
+    resetFormToPropData();
+    errors.value = {}; // Clear errors when exiting edit mode without saving
+  } else {
+    // If starting to edit and no treatments exist, add a default one
+    if (formData.value.treatments.length === 0) {
+        // addTreatment(); // Or let user explicitly add
+    }
+  }
+}
+
+function handleCancel() {
+  toggleEditMode(false);
+  emit('close'); // Or specific cancel event
+}
+
+// --- Data Handling & API ---
+function resetFormToPropData() {
+    if (props.recordDataProp && props.recordDataProp.id) {
+        initialRecordExists.value = true;
+        // ... (Logic to deeply map props.recordDataProp to formData, similar to original watch)
+        // Ensure to handle 'other' condition logic
+        lastSaved.value = props.recordDataProp.updated_at || props.recordDataProp.created_at;
+    } else {
+        initialRecordExists.value = false;
+        formData.value = initialFormData();
+        lastSaved.value = null;
+    }
+    isEditing.value = props.isCreatingNew || false; // Start in edit mode if creating new
+     if (props.isCreatingNew && formData.value.treatments.length === 0) {
+        // Consider adding a default treatment if it's a new record and user expects one
+        // addTreatment();
+    }
+}
+
+watch(() => props.recordDataProp, resetFormToPropData, { immediate: true, deep: true });
+watch(() => props.initialToothNumberProp, (newVal) => {
+    if (!initialRecordExists.value && newVal && formData.value.tooth_number !== newVal) {
+        formData.value.tooth_number = newVal;
+    }
+}, { immediate: true });
+
+
+function addTreatment() { /* ... add to formData.treatments ... */ }
+function removeTreatment(index) { /* ... remove from formData.treatments ... */ }
+function addStep(treatmentIndex) { /* ... add to treatment.steps ... */ }
+function removeStep(treatmentIndex, stepIndex) { /* ... remove from treatment.steps ... */ }
+function handleFileUpload(event, treatmentIndex) { /* ... similar to original ... */ }
+
+// --- Validation ---
+function validateForm() {
+  errors.value = {};
+  let isValid = true;
+  // Basic record validation
+  if (!formData.value.tooth_number) { errors.value.tooth_number = 'Tooth number is required.'; isValid = false; }
+  // ... (other validations for condition, status etc.)
+
+  // Treatment validation
+  formData.value.treatments.forEach((treatment, tIndex) => {
+    if (!treatment.treatment_type) {
+      setTreatmentError(tIndex, 'treatment_type', 'Treatment type is required.');
+      isValid = false;
+    }
+    // Step validation
+    treatment.steps.forEach((step, sIndex) => {
+      if (!step.description) {
+        setStepError(tIndex, sIndex, 'description', 'Step description is required.');
+        isValid = false;
+      }
+      // ...
+    });
+  });
+  return isValid;
+}
+
+function getTreatmentFieldError(treatmentIndex, field) {
+  return errors.value.treatments?.[treatmentIndex]?.[field];
+}
+function setTreatmentError(treatmentIndex, field, message) {
+  if (!errors.value.treatments) errors.value.treatments = [];
+  while (errors.value.treatments.length <= treatmentIndex) errors.value.treatments.push({});
+  errors.value.treatments[treatmentIndex][field] = message;
+}
+// Similar helpers for step errors: getStepFieldError, setStepError
+
+async function handleSubmit() {
+  globalError.value = null;
+  globalSuccess.value = null;
+  if (!validateForm()) {
+    globalError.value = "Please correct the errors in the form.";
+    return;
+  }
+
+  isSubmitting.value = true;
+  // ... (API call logic similar to original, using new formData structure)
+  // ... (On success: toggleEditMode(false); emit('record-saved'); globalSuccess.value = 'Record saved!')
+  // ... (On error: globalError.value = 'Failed to save...'; populate field-specific errors if possible)
+  isSubmitting.value = false;
+}
+
+onMounted(() => {
+  resetFormToPropData();
+  if (props.isCreatingNew) {
+    isEditing.value = true;
+     // If it's a new record and no treatments, maybe add one by default
+    if (formData.value.treatments.length === 0) {
+        // addTreatment(); // Decide if a blank treatment should be added automatically
+    }
+  }
+});
+
+</script>
+
+<style scoped>
+/* Define styles for .card, .card-header, .card-title, .card-body */
+.card {
+  @apply bg-white dark:bg-gray-800 shadow-lg rounded-xl border border-gray-200 dark:border-gray-700;
+}
+.card-header {
+  @apply flex items-center p-4 sm:p-5 border-b border-gray-200 dark:border-gray-700;
+}
+.card-title {
+  @apply text-xl font-semibold text-gray-700 dark:text-gray-200;
+}
+.card-body {
+  @apply p-4 sm:p-6;
+}
+
+/* Define styles for .btn, .btn-primary, .btn-secondary, .btn-success, .btn-icon etc. */
+.btn {
+  @apply inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-150 ease-in-out;
+}
+.btn-primary {
+  @apply text-white bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-blue-400;
+}
+.btn-secondary {
+  @apply text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 focus:ring-gray-500 dark:focus:ring-gray-400 border-gray-300 dark:border-gray-600;
+}
+.btn-success {
+   @apply text-white bg-green-600 hover:bg-green-700 focus:ring-green-500 dark:bg-green-500 dark:hover:bg-green-600 dark:focus:ring-green-400;
+}
+.btn-outline-primary {
+  @apply text-blue-600 border-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-400 dark:hover:bg-blue-900/30;
+}
+ .btn-outline-secondary {
+  @apply text-gray-600 border-gray-400 hover:bg-gray-100 dark:text-gray-300 dark:border-gray-500 dark:hover:bg-gray-700/50;
+}
+.btn-sm { @apply px-3 py-1.5 text-xs; }
+.btn-xs { @apply px-2.5 py-1 text-xs; }
+
+.btn-icon { @apply p-2; }
+.btn-icon-danger { @apply text-red-500 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-700/30; }
+
+
+/* Define styles for .form-input, .form-select, .form-textarea, .form-checkbox, .form-file-input */
+.form-input, .form-select, .form-textarea {
+  @apply block w-full mt-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500/50 dark:focus:border-blue-500;
+}
+.form-input-sm, .form-select-sm { @apply text-sm py-1.5 px-2.5; }
+.form-checkbox {
+  @apply rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-offset-0 focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:checked:bg-blue-500;
+}
+.form-file-input {
+    @apply block w-full text-sm text-gray-500 dark:text-gray-400
+           file:mr-4 file:py-2 file:px-4
+           file:rounded-md file:border-0
+           file:text-sm file:font-semibold
+           file:bg-blue-50 file:text-blue-700
+           hover:file:bg-blue-100
+           dark:file:bg-gray-700 dark:file:text-blue-300 dark:hover:file:bg-gray-600;
+}
+
+/* Alert styles */
+.alert {
+  @apply p-4 rounded-md border flex items-start;
+}
+.alert-danger {
+  @apply bg-red-50 border-red-400 text-red-700 dark:bg-red-900/30 dark:border-red-600 dark:text-red-300;
+}
+.alert-success {
+  @apply bg-green-50 border-green-400 text-green-700 dark:bg-green-900/30 dark:border-green-600 dark:text-green-300;
+}
+
+/* Disabled states */
+input:disabled, select:disabled, textarea:disabled {
+  @apply bg-gray-100 dark:bg-gray-700/50 cursor-not-allowed opacity-70;
+}
+button:disabled {
+  @apply opacity-60 cursor-not-allowed;
+}
+</style>

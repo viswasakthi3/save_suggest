@@ -1,6 +1,6 @@
 <template>
   <div class="flex h-screen bg-gray-100 dark:bg-gray-900">
-    <!-- Sidebar -->
+    <!-- Sidebar 1111-->
     <aside class="w-64 bg-gray-800 text-white flex flex-col min-h-screen">
       <div class="p-4 border-b border-gray-700 flex items-center">
         <Stethoscope class="h-8 w-8 mr-2 text-blue-400" />

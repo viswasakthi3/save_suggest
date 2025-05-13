@@ -14,7 +14,7 @@ export default defineNuxtConfig({
     },
   },
   css: ["~/assets/css/tailwind.css", ],
-  modules: ['@nuxtjs/tailwindcss', 'nuxt-gtag'   ],
+  modules: ['@nuxtjs/tailwindcss', 'nuxt-gtag', '@nuxt/ui'],
   
   
   

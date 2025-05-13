@@ -1,236 +1,381 @@
 <template>
-  <div class="bg-slate-50 dark:bg-gray-900 min-h-[calc(100vh-var(--header-height,0px))]">
-    <div>
-      <form @submit.prevent="handleSubmit" class="space-y-8">
-        <div v-if="error" class="flex items-start p-4 mb-4 bg-red-100 dark:bg-red-900/60 border-l-4 border-red-500 dark:border-red-600 rounded-md shadow-md text-red-700 dark:text-red-200">
-          <AlertTriangle class="h-5 w-5 mr-3 flex-shrink-0 mt-0.5" />
-          <span>{{ error }}</span>
-        </div>
+  <div class="record-detail-view">
+    <!-- 1. Back Button -->
+    <div class="top-navigation-bar">
+      <button @click="$emit('back-to-list')" class="btn btn-subtle btn-back">
+        <ArrowLeft size="18" />
+        <span>Go Back</span>
+      </button>
+    </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8 pr-2 custom-scrollbar-minimal">
+    <div class="container">
+      <form @submit.prevent="handleSubmit">
+        <!-- Alert Message -->
+        <TransitionFade>
+          <div v-if="error" class="alert alert-error">
+            <AlertTriangle class="alert-icon" />
+            <p>{{ error }}</p>
+            <button @click="error = null" class="alert-close" type="button" aria-label="Close">
+              <X size="16" />
+            </button>
+          </div>
+        </TransitionFade>
+
+        <div class="main-layout">
           <!-- Left Column: Record Details -->
-          <div class="lg:col-span-2 space-y-6">
-            <div class="bg-white dark:bg-gray-800 p-5 sm:p-6 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
-              <div class="flex items-center text-xl font-semibold text-sky-700 dark:text-sky-400 mb-6 pb-3 border-b border-gray-300 dark:border-gray-600">
-                <FileText class="h-6 w-6 mr-3" />
-                Record Details
+          <div class="card record-details">
+            <div class="card-header">
+              <div class="card-title">
+                <FileText size="20" />
+                <h2>Record Details</h2>
               </div>
-              <div class="space-y-5">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div>
-                    <label for="detail_tooth_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Tooth Number*</label>
-                    <input type="number" id="detail_tooth_number" v-model.number="formData.tooth_number" required
-                           :disabled="isEditing"
-                           class="form-input-field disabled:bg-gray-100 dark:disabled:bg-gray-700/70 disabled:cursor-not-allowed disabled:text-gray-500 dark:disabled:text-gray-400">
-                  </div>
-                  <div>
-                    <label for="detail_record_status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Record Status*</label>
-                    <select id="detail_record_status" v-model="formData.status" required class="form-input-field">
-                      <option value="initial">Initial</option>
-                      <option value="diagnosis_planned">Diagnosis Planned</option>
-                      <option value="treatment_planned">Treatment Planned</option>
-                      <option value="undergoing_treatment">Undergoing Treatment</option>
-                      <option value="monitoring">Monitoring</option>
-                      <option value="completed">Completed</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
+            </div>
+            <div class="card-content">
+              <div class="form-row two-cols">
+                <div class="form-group">
+                  <label for="detail_tooth_number" class="form-label required">Tooth Number</label>
+                  <input type="number"
+                         id="detail_tooth_number"
+                         v-model.number="formData.tooth_number"
+                         required
+                         :disabled="isEditing"
+                         class="form-input"
+                         placeholder="Enter tooth number">
+                </div>
+                <div class="form-group">
+                  <label class="form-label required">Record Status</label>
+                  <div class="status-progress-container">
+                    <div class="status-progress-bar">
+                      <div class="status-progress-line"></div>
+                      <div 
+                        class="status-progress-fill"
+                        :style="{ 
+                          width: `${((statusOptions.find(s => s.value === formData.status)?.step || 1) - 1) / (statusOptions.length - 1) * 100}%` 
+                        }"
+                      ></div>
+                    </div>
+                    <UTabs 
+                      v-model="formData.status" 
+                      :items="statusOptions.map(s => ({ label: s.label, slot: s.value }))" 
+                      class="w-full" 
+                      variant="pills"
+                      size="md"
+                    >
+                      <template #item="{ item }">
+                        <div 
+                          class="status-progress-item"
+                          :class="[
+                            `status-color-${statusOptions.find(s => s.value === item.slot)?.color}`,
+                            formData.status === item.slot ? 'active' : ''
+                          ]"
+                        >
+                          {{ item.label }}
+                        </div>
+                      </template>
+                    </UTabs>
                   </div>
                 </div>
-                <div class="sm:col-span-2">
-                  <label for="detail_condition" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Condition*</label>
-                  <select id="detail_condition" v-model="formData.condition" required class="form-input-field">
-                    <option disabled value="">Select condition</option>
-                    <option value="Healthy">Healthy</option>
-                    <option value="Decayed">Decayed</option>
-                    <option value="Filled">Filled</option>
-                    <option value="Missing">Missing</option>
-                    <option value="Cracked">Cracked</option>
-                    <option value="Wisdom">Wisdom</option>
-                    <option value="Impacted">Impacted</option>
-                    <option value="other">Other</option>
-                  </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label required">Condition</label>
+                <div class="condition-badges">
+                  <button 
+                    v-for="condition in predefinedConditions" 
+                    :key="condition"
+                    @click="selectCondition(condition)"
+                    :class="[
+                      'condition-badge', 
+                      formData.condition === condition ? 'condition-badge-selected' : ''
+                    ]"
+                    type="button">
+                    {{ condition }}
+                  </button>
+                  <button 
+                    @click="selectCondition('other')"
+                    :class="[
+                      'condition-badge', 
+                      formData.condition === 'other' ? 'condition-badge-selected' : '',
+                      'condition-badge-other'
+                    ]"
+                    type="button">
+                    Other
+                  </button>
                 </div>
-                <div v-if="formData.condition === 'other'" class="sm:col-span-2">
-                  <label for="detail_other_condition" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Specify Other Condition*</label>
-                  <input type="text" id="detail_other_condition" v-model="formData.other_condition_text" required
+              </div>
+              <TransitionExpand>
+                <div class="form-group" v-if="formData.condition === 'other'">
+                  <label for="detail_other_condition" class="form-label required">Specify Other Condition</label>
+                  <input type="text"
+                         id="detail_other_condition"
+                         v-model="formData.other_condition_text"
+                         required
                          placeholder="Describe the condition"
-                         class="form-input-field">
+                         class="form-input">
                 </div>
-                <div class="sm:col-span-2">
-                  <label for="detail_record_notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">General Notes</label>
-                  <textarea id="detail_record_notes" v-model="formData.notes" rows="4"
-                            placeholder="Add any general notes for this dental record..."
-                            class="form-input-field"></textarea>
-                </div>
+              </TransitionExpand>
+              <div class="form-group">
+                <label for="detail_record_notes" class="form-label">General Notes</label>
+                <textarea id="detail_record_notes"
+                          v-model="formData.notes"
+                          rows="4"
+                          placeholder="Add any general notes for this dental record..."
+                          class="form-textarea"></textarea>
               </div>
             </div>
           </div>
 
           <!-- Right Column: Treatments -->
-          <div class="lg:col-span-3 space-y-6">
-            <div class="sticky top-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md p-4 rounded-lg shadow-md z-10 border border-gray-200 dark:border-gray-700">
-              <div class="flex justify-between items-center">
-                <h4 class="text-xl font-semibold text-sky-700 dark:text-sky-400 flex items-center">
-                  <ListChecks class="h-6 w-6 mr-3" />
-                  Treatments
-                </h4>
-                <button type="button" @click="addTreatment"
-                        class="flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 dark:focus:ring-offset-gray-900 transition-colors">
-                  <PlusCircle class="h-5 w-5 mr-2" />
-                  Add Treatment
-                </button>
+          <div class="treatments-container">
+            <div class="treatments-header">
+              <div class="section-title">
+                <ListChecks size="20" />
+                <h2>Treatments</h2>
               </div>
+              <button type="button"
+                      @click="addTreatment"
+                      class="btn btn-primary btn-with-icon">
+                <PlusCircle size="18" />
+                <span>Add Treatment</span>
+              </button>
             </div>
 
-            <div v-if="!formData.treatments || formData.treatments.length === 0" class="bg-slate-100 dark:bg-gray-800/60 p-6 rounded-lg text-center text-slate-500 dark:text-slate-400 shadow border border-gray-200 dark:border-gray-700">
-                <Info class="h-10 w-10 mx-auto mb-3 text-slate-400 dark:text-slate-500" />
-                <p class="font-medium">No treatments added yet.</p>
-                <p class="text-sm">Click "Add Treatment" to get started.</p>
+            <div v-if="!formData.treatments || formData.treatments.length === 0" class="empty-state">
+              <div class="empty-state-icon">
+                <Info size="36" />
+              </div>
+              <h3>No treatments added yet</h3>
+              <p>Click "Add Treatment" to begin creating a treatment plan</p>
             </div>
 
-            <div v-for="(treatment, treatmentIndex) in formData.treatments" :key="treatmentIndex"
-                 class="bg-white dark:bg-gray-800 p-5 sm:p-6 rounded-xl shadow-xl mb-6 border border-gray-200 dark:border-gray-700">
-              
-              <div class="flex justify-between items-center mb-5 pb-3 border-b border-gray-300 dark:border-gray-600">
-                <h4 class="text-lg font-semibold text-sky-600 dark:text-sky-400 flex items-center">
-                  <Stethoscope class="h-5 w-5 mr-2.5"/>
-                  Treatment {{ treatmentIndex + 1 }}
-                </h4>
-                <button v-if="formData.treatments.length > 0" type="button" @click="removeTreatment(treatmentIndex)"
-                        class="flex items-center text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xs font-medium px-2 py-1 rounded-md hover:bg-red-100 dark:hover:bg-red-700/50 transition-colors">
-                  <Trash2 class="h-4 w-4 mr-1" />
-                  Remove
-                </button>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div>
-                  <label :for="`detail_treatment_type_${treatmentIndex}`" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Treatment Type*</label>
-                  <select :id="`detail_treatment_type_${treatmentIndex}`" v-model="treatment.treatment_type" required class="form-input-field">
-                    <option disabled value="">Select treatment</option>
-                    <option value="filling">Filling</option>
-                    <option value="root_canal">Root Canal</option>
-                    <option value="extraction">Extraction</option>
-                    <option value="crown">Crown</option>
-                    <option value="cleaning">Cleaning</option>
-                    <option value="bridge">Bridge</option>
-                    <option value="implant">Implant</option>
-                    <option value="orthodontics">Orthodontics</option>
-                    <option value="other_treatment">Other (Specify)</option>
-                  </select>
-                </div>
-                <div>
-                  <label :for="`detail_treatment_cost_${treatmentIndex}`" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Estimated Cost</label>
-                  <input type="number" step="0.01" :id="`detail_treatment_cost_${treatmentIndex}`" v-model.number="treatment.cost"
-                         placeholder="0.00"
-                         class="form-input-field">
-                </div>
-              </div>
-              <div class="mt-5">
-                <label :for="`detail_treatment_notes_${treatmentIndex}`" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Treatment Notes</label>
-                <textarea :id="`detail_treatment_notes_${treatmentIndex}`" v-model="treatment.notes" rows="3"
-                          placeholder="Add any notes specific to this treatment..."
-                          class="form-input-field"></textarea>
-              </div>
-              <div class="mt-5 flex items-center">
-                <input :id="`detail_xray_taken_${treatmentIndex}`" type="checkbox" v-model="treatment.xray_taken"
-                       class="h-4 w-4 text-sky-600 border-gray-300 dark:border-gray-500 rounded focus:ring-sky-500 dark:bg-gray-700 dark:focus:ring-sky-600 dark:ring-offset-gray-800 cursor-pointer">
-                <label :for="`detail_xray_taken_${treatmentIndex}`" class="ml-2 block text-sm text-gray-700 dark:text-gray-300 cursor-pointer">X-Ray Taken</label>
-              </div>
-              <div v-if="treatment.xray_taken" class="mt-4">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">X-Ray Image</label>
-                <div class="mt-1 flex justify-center px-6 pt-8 pb-8 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg hover:border-sky-500 dark:hover:border-sky-400 transition-colors group">
-                  <div class="space-y-1 text-center">
-                    <UploadCloud class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 group-hover:text-sky-500 dark:group-hover:text-sky-400 transition-colors" />
-                    <div class="flex text-sm text-gray-600 dark:text-gray-400">
-                      <label :for="`detail_xray_image_input_${treatmentIndex}`" class="relative cursor-pointer bg-white dark:bg-gray-800 rounded-md font-medium text-sky-600 dark:text-sky-400 hover:text-sky-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-sky-500 dark:ring-offset-gray-900">
-                        <span>Upload a file</span>
-                        <input :id="`detail_xray_image_input_${treatmentIndex}`" name="xray_image" type="file" @change="handleFileUpload($event, treatmentIndex)" class="sr-only">
-                      </label>
-                      <p class="pl-1">or drag and drop</p>
-                    </div>
-                    <p class="text-xs text-gray-500 dark:text-gray-500">PNG, JPG, GIF up to 5MB</p>
-                    <div v-if="treatment.xray_image_name || treatment.xray_image_url" class="pt-2">
-                      <p v-if="treatment.xray_image_name" class="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
-                        New: {{ treatment.xray_image_name }}
-                      </p>
-                      <p v-else-if="treatment.xray_image_url" class="text-sm text-sky-600 dark:text-sky-400 truncate max-w-xs" :title="treatment.xray_image_url">
-                        Current: {{ treatment.xray_image_url.substring(treatment.xray_image_url.lastIndexOf('/') + 1) }}
-                      </p>
-                    </div>
+            <TransitionGroup name="treatment-list" tag="div" class="treatments-list">
+              <div v-for="(treatment, treatmentIndex) in formData.treatments"
+                   :key="treatmentIndex"
+                   class="treatment-card card">
+                <div class="card-header">
+                  <div class="card-title">
+                    <Stethoscope size="18" />
+                    <h3>{{ getTreatmentTitle(treatment.treatment_type, treatmentIndex) }}</h3>
                   </div>
-                </div>
-              </div>
-
-              <!-- Treatment Steps Section -->
-              <div class="mt-8 pt-6 border-t border-gray-300 dark:border-gray-600">
-                <div class="flex justify-between items-center mb-4">
-                  <h5 class="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center">
-                    <ListOrdered class="h-5 w-5 mr-2.5 text-gray-600 dark:text-gray-300"/>
-                    Treatment Steps
-                  </h5>
-                  <button type="button" @click="addStep(treatmentIndex)"
-                          class="flex items-center px-3.5 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 dark:focus:ring-offset-gray-900 transition-colors">
-                    <Plus class="h-4 w-4 mr-1.5" />
-                    Add Step
+                  <button v-if="formData.treatments.length > 0"
+                          type="button"
+                          @click="removeTreatment(treatmentIndex)"
+                          class="btn btn-icon btn-danger-subtle">
+                    <Trash2 size="16" aria-label="Remove treatment" />
                   </button>
                 </div>
-                <div v-if="!treatment.steps || treatment.steps.length === 0" class="text-sm text-center text-gray-500 dark:text-gray-400 py-4 px-3 bg-slate-100 dark:bg-gray-700/50 rounded-md shadow-sm">
-                  No steps added for this treatment.
-                </div>
-                <div v-else class="space-y-4">
-                  <div v-for="(step, stepIndex) in treatment.steps" :key="stepIndex" class="bg-slate-50 dark:bg-gray-700/70 p-4 rounded-lg shadow-md border border-gray-200 dark:border-gray-600/80">
-                    <div class="flex justify-between items-center mb-3">
-                       <p class="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center">
-                         <ChevronRight class="h-4 w-4 mr-1.5 text-gray-500 dark:text-gray-400"/>
-                         Step {{ stepIndex + 1 }}
-                       </p>
-                       <button type="button" @click="removeStep(treatmentIndex, stepIndex)"
-                               class="flex items-center text-pink-500 hover:text-pink-700 dark:hover:text-pink-400 text-xs font-medium hover:bg-pink-100 dark:hover:bg-pink-700/40 p-1 rounded-md transition-colors">
-                               <X class="h-3.5 w-3.5 mr-0.5"/> Remove
-                       </button>
-                    </div>
-                    <div class="space-y-3">
-                      <div>
-                        <label :for="`detail_step_desc_${treatmentIndex}_${stepIndex}`" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Description*</label>
-                        <input type="text" :id="`detail_step_desc_${treatmentIndex}_${stepIndex}`" v-model="step.description" required placeholder="Step description"
-                               class="form-input-field text-sm py-1.5">
+
+                <div class="card-content">
+                  <div class="form-row two-cols">
+                    <div class="form-group">
+                      <label :for="`detail_treatment_type_${treatmentIndex}`" class="form-label required">Treatment Type</label>
+                      <div class="select-wrapper">
+                        <select :id="`detail_treatment_type_${treatmentIndex}`"
+                                v-model="treatment.treatment_type"
+                                required
+                                class="form-select">
+                          <option disabled value="">Select treatment</option>
+                          <option value="filling">Filling</option>
+                          <option value="root_canal">Root Canal</option>
+                          <option value="extraction">Extraction</option>
+                          <option value="crown">Crown</option>
+                          <option value="cleaning">Cleaning</option>
+                          <option value="bridge">Bridge</option>
+                          <option value="implant">Implant</option>
+                          <option value="orthodontics">Orthodontics</option>
+                          <option value="other_treatment">Other (Specify)</option>
+                        </select>
                       </div>
-                      <div class="grid grid-cols-2 gap-4">
-                        <div>
-                          <label :for="`detail_step_date_${treatmentIndex}_${stepIndex}`" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Date</label>
-                          <input type="date" :id="`detail_step_date_${treatmentIndex}_${stepIndex}`" v-model="step.step_date"
-                                 class="form-input-field text-sm py-1.5">
-                        </div>
-                        <div>
-                          <label :for="`detail_step_status_${treatmentIndex}_${stepIndex}`" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Status*</label>
-                          <select :id="`detail_step_status_${treatmentIndex}_${stepIndex}`" v-model="step.status" required
-                                  class="form-input-field text-sm py-1.5">
-                            <option value="pending">Pending</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="done">Done</option>
-                            <option value="skipped">Skipped</option>
-                          </select>
-                        </div>
+                    </div>
+                    <div class="form-group">
+                      <label :for="`detail_treatment_cost_${treatmentIndex}`" class="form-label">Estimated Cost</label>
+                      <div class="input-with-prefix">
+                        <span class="input-prefix">$</span>
+                        <input type="number"
+                               step="0.01"
+                               :id="`detail_treatment_cost_${treatmentIndex}`"
+                               v-model.number="treatment.cost"
+                               placeholder="0.00"
+                               class="form-input has-prefix">
                       </div>
                     </div>
                   </div>
+
+                  <!-- 3. Treatment Notes Toggle & X-Ray -->
+                  <div class="treatment-options-row">
+                    <div class="form-switch">
+                      <input :id="`detail_xray_taken_${treatmentIndex}`"
+                             type="checkbox"
+                             v-model="treatment.xray_taken"
+                             class="switch-input">
+                      <label :for="`detail_xray_taken_${treatmentIndex}`" class="switch-label">
+                        X-Ray Taken
+                      </label>
+                    </div>
+                    <button type="button"
+                            @click="toggleTreatmentNotes(treatmentIndex)"
+                            class="btn btn-link btn-toggle-notes">
+                      <MessageSquare size="16" />
+                      <span>{{ treatmentNotesVisibility[treatmentIndex] ? 'Hide Notes' : 'Add/View Notes' }}</span>
+                    </button>
+                  </div>
+
+                  <TransitionExpand>
+                    <div v-if="treatmentNotesVisibility[treatmentIndex]" class="treatment-notes-area">
+                      <label :for="`detail_treatment_notes_${treatmentIndex}`" class="form-label">Treatment Notes</label>
+                      <textarea :id="`detail_treatment_notes_${treatmentIndex}`"
+                                v-model="treatment.notes"
+                                rows="3"
+                                placeholder="Add any notes specific to this treatment..."
+                                class="form-textarea"></textarea>
+                    </div>
+                  </TransitionExpand>
+
+                  <TransitionExpand>
+                    <div v-if="treatment.xray_taken" class="xray-upload">
+                      <label class="form-label">X-Ray Image</label>
+                      <div class="upload-zone" @dragover.prevent @drop.prevent="handleFileDrop($event, treatmentIndex)">
+                        <input :id="`detail_xray_image_input_${treatmentIndex}`"
+                               type="file"
+                               @change="handleFileUpload($event, treatmentIndex)"
+                               accept="image/png,image/jpeg,image/gif"
+                               class="file-input">
+                        <div class="upload-content">
+                          <div class="upload-icon">
+                            <UploadCloud size="32" />
+                          </div>
+                          <div class="upload-text">
+                            <strong>Drag & drop image here</strong>
+                            <span>or <label :for="`detail_xray_image_input_${treatmentIndex}`" class="upload-browse">browse files</label></span>
+                            <small>PNG, JPG, GIF up to 5MB</small>
+                          </div>
+                        </div>
+                        <TransitionFade>
+                          <div v-if="treatment.xray_image_name || treatment.xray_image_url" class="upload-file-info">
+                            <div class="file-info">
+                              <Image size="16" />
+                              <span v-if="treatment.xray_image_name" class="file-name">
+                                New: {{ treatment.xray_image_name }}
+                              </span>
+                              <span v-else-if="treatment.xray_image_url" class="file-name">
+                                Current: {{ treatment.xray_image_url.substring(treatment.xray_image_url.lastIndexOf('/') + 1) }}
+                              </span>
+                            </div>
+                            <button @click="clearXrayImage(treatmentIndex)" type="button" class="btn-clear-file" aria-label="Remove file">
+                              <X size="14" />
+                            </button>
+                          </div>
+                        </TransitionFade>
+                      </div>
+                    </div>
+                  </TransitionExpand>
+
+                  <!-- Treatment Steps Section -->
+                  <div class="treatment-steps">
+                    <div class="steps-header">
+                      <div class="section-title">
+                        <ListOrdered size="18" />
+                        <h4>Treatment Steps</h4>
+                      </div>
+                      <button type="button"
+                              @click="addStep(treatmentIndex)"
+                              class="btn btn-secondary btn-sm btn-with-icon">
+                        <Plus size="14" />
+                        <span>Add Step</span>
+                      </button>
+                    </div>
+
+                    <div v-if="!treatment.steps || treatment.steps.length === 0" class="steps-empty-state">
+                      <p>No steps added for this treatment</p>
+                    </div>
+
+                    <TransitionGroup name="step-list" tag="div" class="steps-list">
+                      <div v-for="(step, stepIndex) in treatment.steps"
+                          :key="stepIndex"
+                          class="step-item">
+                        <div class="step-header">
+                          <div class="step-number">
+                            <span>Step {{ stepIndex + 1 }}</span>
+                          </div>
+                          <button type="button"
+                                  @click="removeStep(treatmentIndex, stepIndex)"
+                                  class="btn btn-icon btn-xs">
+                            <X size="14" aria-label="Remove step" />
+                          </button>
+                        </div>
+                        <div class="step-content">
+                          <div class="form-group">
+                            <label :for="`detail_step_desc_${treatmentIndex}_${stepIndex}`" class="form-label required">Description</label>
+                            <input type="text"
+                                  :id="`detail_step_desc_${treatmentIndex}_${stepIndex}`"
+                                  v-model="step.description"
+                                  required
+                                  placeholder="Step description"
+                                  class="form-input">
+                          </div>
+                          <div class="form-row two-cols">
+                            <div class="form-group">
+                              <label :for="`detail_step_date_${treatmentIndex}_${stepIndex}`" class="form-label">Date</label>
+                              <UPopover>
+                                <UButton 
+                                  color="neutral" 
+                                  variant="subtle" 
+                                  icon="i-lucide-calendar"
+                                  :id="`detail_step_date_${treatmentIndex}_${stepIndex}`"
+                                  class="date-picker-button w-full justify-start"
+                                >
+                                  {{ step.step_date ? formatDateDisplay(step.step_date) : 'Select a date' }}
+                                </UButton>
+                                <template #content>
+                                  <UCalendar 
+                                    v-model="step.step_date" 
+                                    class="p-2" 
+                                    :min="new Date(2020, 0, 1)"
+                                    :max="new Date(2030, 11, 31)"
+                                  />
+                                </template>
+                              </UPopover>
+                            </div>
+                            <div class="form-group">
+                              <label :for="`detail_step_status_${treatmentIndex}_${stepIndex}`" class="form-label required">Status</label>
+                              <div class="step-status-tabs">
+                                <button 
+                                  v-for="stepStatus in stepStatusOptions" 
+                                  :key="stepStatus.value"
+                                  @click="step.status = stepStatus.value"
+                                  type="button"
+                                  :class="[
+                                    'status-tab',
+                                    step.status === stepStatus.value ? 'status-tab-active' : '',
+                                    `status-tab-${stepStatus.color}`
+                                  ]"
+                                >
+                                  {{ stepStatus.label }}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </TransitionGroup>
+                  </div>
                 </div>
               </div>
-            </div>
+            </TransitionGroup>
           </div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="flex justify-end space-x-4 pt-8 pb-4 border-t border-gray-300 dark:border-gray-700 mt-10">
-          <button type="button" @click="$emit('back-to-list')"
-                  class="px-5 py-2.5 border border-gray-400 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 dark:focus:ring-offset-gray-900 transition-colors">
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button type="button"
+                  @click="$emit('back-to-list')"
+                  class="btn btn-outline">
             Cancel
           </button>
-          <button type="submit" :disabled="isSubmitting"
-                  class="px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 disabled:opacity-70 disabled:cursor-not-allowed flex items-center transition-colors dark:focus:ring-offset-gray-900">
-            <LoaderCircle v-if="isSubmitting" class="animate-spin h-5 w-5 mr-2.5" />
-            {{ isSubmitting ? 'Saving...' : (isEditing ? 'Update Record' : 'Save Record') }}
+          <button type="submit"
+                  :disabled="isSubmitting"
+                  class="btn btn-primary">
+            <LoaderCircle v-if="isSubmitting" class="btn-icon spin" />
+            <span>{{ isSubmitting ? 'Saving...' : (isEditing ? 'Update Record' : 'Save Record') }}</span>
           </button>
         </div>
       </form>
@@ -239,13 +384,34 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, toRefs } from 'vue';
+import { ref, watch, onMounted, h, computed } from 'vue'; // h is for custom transition components // Added computed
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { 
-  X, ClipboardEdit, LoaderCircle, Image, ArrowLeft, 
-  FileText, ListChecks, PlusCircle, Info, Stethoscope, Trash2, UploadCloud, ListOrdered, Plus, ChevronRight, AlertTriangle 
+import {
+  X, ClipboardEdit, LoaderCircle, Image, ArrowLeft, FileText,
+  ListChecks, PlusCircle, Info, Stethoscope, Trash2, UploadCloud,
+  ListOrdered, Plus, AlertTriangle, MessageSquare // Added MessageSquare, ArrowLeft
 } from 'lucide-vue-next';
+
+// Function to format date for display
+const formatDateDisplay = (dateString) => {
+  if (!dateString) return 'Select a date';
+  try {
+    const date = new Date(dateString);
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return 'Invalid date';
+    }
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  } catch (e) {
+    console.error("Error formatting date:", e);
+    return 'Invalid date';
+  }
+};
 
 const props = defineProps({
   recordDataProp: {
@@ -273,7 +439,37 @@ const isEditing = ref(false);
 const error = ref(null);
 const isSubmitting = ref(false);
 
+// Format date for step date picker
+const formatDate = (dateString) => {
+  if (!dateString) return null;
+  if (dateString instanceof Date) return dateString;
+  
+  // Try to parse the date string
+  try {
+    return new Date(dateString);
+  } catch (e) {
+    console.error('Error parsing date:', e);
+    return null;
+  }
+};
+
 const predefinedConditions = ["Healthy", "Decayed", "Filled", "Missing", "Cracked", "Wisdom", "Impacted"];
+
+const statusOptions = [
+  { value: 'initial', label: 'Initial', color: 'blue', step: 1 },
+  { value: 'diagnosis_planned', label: 'Diagnosis Planned', color: 'indigo', step: 2 },
+  { value: 'intreatment', label: 'In Treatment', color: 'yellow', step: 3 },
+  { value: 'completed', label: 'Completed', color: 'emerald', step: 4 }
+];
+
+ 
+
+const stepStatusOptions = [
+  { value: 'pending', label: 'Pending', color: 'blue' },
+  { value: 'in_progress', label: 'In Progress', color: 'yellow' },
+  { value: 'done', label: 'Done', color: 'green' },
+  { value: 'skipped', label: 'Skipped', color: 'red' },
+];
 
 const defaultStep = () => ({
   description: '',
@@ -303,6 +499,37 @@ const initialFormData = () => ({
 
 const formData = ref(initialFormData());
 
+// For Treatment Notes Toggle
+const treatmentNotesVisibility = ref([]);
+
+// Function to format treatment type for display
+const getTreatmentTitle = (type, index) => {
+  if (!type) return `Treatment ${index + 1}`;
+  
+  // Format the treatment type by capitalizing and replacing underscores
+  const formattedType = type
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+  
+  return formattedType || `Treatment ${index + 1}`;
+};
+
+const initializeTreatmentNotesVisibility = (treatmentsArray) => {
+  treatmentNotesVisibility.value = treatmentsArray ? treatmentsArray.map(() => false) : [];
+};
+
+const selectCondition = (condition) => {
+  formData.value.condition = condition;
+  if (condition !== 'other') {
+    formData.value.other_condition_text = '';
+  }
+};
+
+const toggleTreatmentNotes = (treatmentIndex) => {
+  treatmentNotesVisibility.value[treatmentIndex] = !treatmentNotesVisibility.value[treatmentIndex];
+};
+
 const getAccessTokenCookie = () => {
   const token = Cookies.get('dental_access_token');
   if (!token) {
@@ -314,6 +541,15 @@ const getAccessTokenCookie = () => {
 
 const handleFileUpload = (event, treatmentIndex) => {
   const file = event.target.files[0];
+  handleFileProcess(file, treatmentIndex);
+};
+
+const handleFileDrop = (event, treatmentIndex) => {
+  const file = event.dataTransfer.files[0];
+  handleFileProcess(file, treatmentIndex);
+};
+
+const handleFileProcess = (file, treatmentIndex) => {
   const currentTreatment = formData.value.treatments[treatmentIndex];
 
   if (file) {
@@ -321,7 +557,6 @@ const handleFileUpload = (event, treatmentIndex) => {
       error.value = 'File size exceeds 5MB limit.';
       currentTreatment.xray_image = null;
       currentTreatment.xray_image_name = '';
-      event.target.value = ''; 
       return;
     }
     const allowedTypes = ['image/png', 'image/jpeg', 'image/gif'];
@@ -329,18 +564,24 @@ const handleFileUpload = (event, treatmentIndex) => {
       error.value = 'Invalid file type. Only PNG, JPG, GIF allowed.';
       currentTreatment.xray_image = null;
       currentTreatment.xray_image_name = '';
-      event.target.value = ''; 
       return;
     }
 
     currentTreatment.xray_image = file;
     currentTreatment.xray_image_name = file.name;
     currentTreatment.xray_image_url = '';
-    error.value = null; 
+    error.value = null;
   } else {
     currentTreatment.xray_image = null;
     currentTreatment.xray_image_name = '';
   }
+};
+
+const clearXrayImage = (treatmentIndex) => {
+  const treatment = formData.value.treatments[treatmentIndex];
+  treatment.xray_image = null;
+  treatment.xray_image_name = '';
+  treatment.xray_image_url = '';
 };
 
 const addTreatment = () => {
@@ -348,10 +589,12 @@ const addTreatment = () => {
     formData.value.treatments = [];
   }
   formData.value.treatments.push(defaultTreatment());
+  treatmentNotesVisibility.value.push(false); // Sync visibility state
 };
 
 const removeTreatment = (treatmentIndex) => {
   formData.value.treatments.splice(treatmentIndex, 1);
+  treatmentNotesVisibility.value.splice(treatmentIndex, 1); // Sync visibility state
 };
 
 const addStep = (treatmentIndex) => {
@@ -390,9 +633,16 @@ watch(() => props.recordDataProp, (newVal) => {
         ? JSON.parse(JSON.stringify(newVal.treatments)).map(t => ({
             ...defaultTreatment(),
             ...t,
-            xray_image: null, 
+            xray_image: null,
             xray_image_name: t.xray_image_url ? '' : (t.xray_image_name || ''),
-            steps: t.steps ? JSON.parse(JSON.stringify(t.steps)).map(s => ({ ...defaultStep(), ...s })) : []
+            steps: t.steps ? JSON.parse(JSON.stringify(t.steps)).map(s => {
+              // Convert date string to Date object for the date picker
+              const step = { ...defaultStep(), ...s };
+              if (step.step_date) {
+                step.step_date = formatDate(step.step_date);
+              }
+              return step;
+            }) : []
           }))
         : [defaultTreatment()]
     };
@@ -400,12 +650,13 @@ watch(() => props.recordDataProp, (newVal) => {
     isEditing.value = false;
     formData.value = {
       ...initialFormData(),
-      tooth_number: props.initialToothNumberProp || formData.value.tooth_number,
+      tooth_number: props.initialToothNumberProp || (formData.value.tooth_number || null), // Ensure tooth_number is set if available
     };
     if (!formData.value.treatments || formData.value.treatments.length === 0) {
         formData.value.treatments = [defaultTreatment()];
     }
   }
+  initializeTreatmentNotesVisibility(formData.value.treatments);
   error.value = null;
 }, { immediate: true, deep: true });
 
@@ -418,6 +669,10 @@ watch(() => props.initialToothNumberProp, (newVal) => {
 const handleSubmit = async () => {
   error.value = null;
   isSubmitting.value = true;
+  
+  // Format dates before submission
+  formatDatesBeforeSubmit();
+  
   const token = getAccessTokenCookie();
   if (!token) {
     isSubmitting.value = false;
@@ -437,7 +692,7 @@ const handleSubmit = async () => {
     isSubmitting.value = false;
     return;
   }
-  
+
   if (formData.value.treatments && formData.value.treatments.length > 0) {
     for (let i = 0; i < formData.value.treatments.length; i++) {
       const treatment = formData.value.treatments[i];
@@ -479,8 +734,8 @@ const handleSubmit = async () => {
       cost: t.cost ? parseFloat(t.cost) : undefined,
       notes: t.notes,
       xray_taken: t.xray_taken,
-      xray_image_url: t.xray_taken 
-        ? (t.xray_image ? `PENDING_UPLOAD_${t.xray_image_name}` : t.xray_image_url || undefined) 
+      xray_image_url: t.xray_taken
+        ? (t.xray_image ? `PENDING_UPLOAD_${t.xray_image_name}` : t.xray_image_url || undefined)
         : undefined,
       steps: t.steps.map((step, index) => ({
         step_order: index + 1,
@@ -490,10 +745,10 @@ const handleSubmit = async () => {
       }))
     }))
   };
-  
+
  Object.keys(payload).forEach(key => {
     if (payload[key] === undefined || payload[key] === '') {
-      if (key !== 'notes') {
+      if (key !== 'notes') { // Allow empty notes
         delete payload[key];
       }
     }
@@ -503,8 +758,8 @@ const handleSubmit = async () => {
     Object.keys(cleanedTreatment).forEach(tKey => {
       if (cleanedTreatment[tKey] === undefined || cleanedTreatment[tKey] === '' || (Array.isArray(cleanedTreatment[tKey]) && cleanedTreatment[tKey].length === 0) ) {
         if (tKey === 'steps' && Array.isArray(cleanedTreatment[tKey]) && cleanedTreatment[tKey].length === 0) {
-           delete cleanedTreatment[tKey]; 
-        } else if (tKey !== 'notes' && (cleanedTreatment[tKey] === undefined || cleanedTreatment[tKey] === '')) {
+           delete cleanedTreatment[tKey];
+        } else if (tKey !== 'notes' && (cleanedTreatment[tKey] === undefined || cleanedTreatment[tKey] === '')) { // Allow empty notes for treatment
            delete cleanedTreatment[tKey];
         }
       }
@@ -515,7 +770,8 @@ const handleSubmit = async () => {
         Object.keys(cleanedStep).forEach(sKey => {
           if (cleanedStep[sKey] === undefined || cleanedStep[sKey] === '' || cleanedStep[sKey] === null) {
              if (sKey === 'step_date' && cleanedStep[sKey] === null) {
-             } else if (sKey !== 'description' && (cleanedStep[sKey] === undefined || cleanedStep[sKey] === '' || cleanedStep[sKey] === null)) {
+                // keep null step_date
+             } else if (sKey !== 'description' && (cleanedStep[sKey] === undefined || cleanedStep[sKey] === '' || cleanedStep[sKey] === null)) { // description is required
                 delete cleanedStep[sKey];
              }
           }
@@ -527,14 +783,15 @@ const handleSubmit = async () => {
     return cleanedTreatment;
   });
 
+
   try {
     const headers = {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json'
     };
-    
+
     const url = `${config.public.API_BASE_URL}/patients/${props.patientId}/dental-records`;
-    
+
     const response = await axios.post(url, payload, { headers });
 
     emit('record-saved', response.data);
@@ -572,47 +829,1023 @@ const handleSubmit = async () => {
 };
 
 onMounted(() => {
-  if (props.isCreatingNew && !props.recordDataProp && !props.initialToothNumberProp) {
-      formData.value = initialFormData();
-      isEditing.value = false;
-  }
+  // formData and treatmentNotesVisibility initialization is handled by the immediate watch on recordDataProp
+  // If creating new and no recordDataProp is passed, initialFormData() is used by the watch.
 });
 
+
+// Define reusable transition components (using Vue's h for brevity if needed, or keep as is)
+const TransitionFade = {
+  name: 'fade',
+  setup(props, { slots }) {
+    return () => h('transition', {
+      name: 'fade',
+      mode: 'out-in',
+      appear: true
+    }, slots.default?.())
+  }
+};
+
+const TransitionExpand = {
+  name: 'expand',
+  setup(props, { slots }) {
+    return () => h('transition', {
+      name: 'expand',
+      appear: true // Can be true or false based on preference
+    }, slots.default?.())
+  }
+};
+
+// Function to be called before submitting to ensure dates are in the correct format
+const formatDatesBeforeSubmit = () => {
+  formData.value.treatments.forEach(treatment => {
+    if (treatment.steps) {
+      treatment.steps.forEach(step => {
+        // Format step_date to ISO string if it's a Date object
+        if (step.step_date instanceof Date) {
+          step.step_date = step.step_date.toISOString().split('T')[0];
+        }
+      });
+    }
+  });
+};
 </script>
 
-<style scoped>
-.form-input-field {
-  @apply w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 dark:bg-gray-700/60 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-base transition-colors;
+<style>
+:root {
+  --color-primary: 14 165 233; /* sky-500 */
+  --color-primary-light: 186 230 253; /* sky-200 */
+  --color-primary-dark: 3 105 161; /* sky-700 */
+  --color-secondary: 20 184 166; /* teal-500 */
+  --color-danger: 239 68 68; /* red-500 */
+  --color-success: 34 197 94; /* green-500 */
+  --color-warning: 245 158 11; /* amber-500 */
+
+  --color-surface: 255 255 255; /* white - For card backgrounds */
+  --color-surface-hover: 243 244 246; /* gray-100 */
+  --color-surface-muted: 249 250 251; /* gray-50 */
+
+  --color-bg: 248 250 252; /* slate-50 - For page background and input backgrounds */
+  --color-border: 226 232 240; /* slate-200 */
+
+  --color-text: 15 23 42; /* slate-900 */
+  --color-text-muted: 100 116 139; /* slate-500 */
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+
+  --container-max: 1280px;
+  --container-padding: 1.5rem;
+
+  --form-control-height: 2.75rem;
+  --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-family-heading: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-input:disabled, select:disabled, textarea:disabled {
+/* Dark theme remains for context, but primary changes target light theme based on user description */
+.dark {
+  --color-primary: 56 189 248; /* sky-400 */
+  --color-primary-light: 2 132 199; /* sky-600 */
+  --color-primary-dark: 125 211 252; /* sky-300 */
+
+  --color-surface: 31 41 55; /* gray-800 */
+  --color-surface-hover: 55 65 81; /* gray-700 */
+  --color-surface-muted: 17 24 39; /* gray-900 */
+
+  --color-bg: 17 24 39; /* gray-900 */
+  --color-border: 55 65 81; /* gray-700 */
+
+  --color-text: 248 250 252; /* slate-50 */
+  --color-text-muted: 156 163 175; /* gray-400 */
+}
+
+.record-detail-view {
+  min-height: calc(100vh - var(--header-height, 0px));
+  background-color: rgb(var(--color-bg));
+  padding-bottom: 2rem; /* Added padding at bottom */
+  font-family: var(--font-family-sans); /* Apply global font */
+  letter-spacing: -0.01em;
+  line-height: 1.5;
+}
+
+/* Import Inter font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* 1. Back Button Styling */
+.top-navigation-bar {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 1rem var(--container-padding) 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgb(var(--color-text-muted));
+  /* Removed explicit background-color to inherit from btn-subtle or default */
+  /* border: 1px solid rgb(var(--color-border)); */ /* Covered by btn-subtle */
+  /* border-radius: var(--radius-md); */ /* Covered by btn */
+  /* cursor: pointer; */ /* Covered by btn */
+  /* transition: all var(--transition-fast); */ /* Covered by btn */
+}
+.btn-back:hover {
+  color: rgb(var(--color-primary-dark));
+  border-color: rgb(var(--color-primary-dark) / 0.5);
+}
+
+.container {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 var(--container-padding);
+}
+
+/* Layout */
+.main-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  margin-top: 1rem; /* Space after back button */
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .main-layout {
+    grid-template-columns: 2fr 3fr;
+    gap: 2.5rem;
+    border-right: none; /* Remove right border */
+  }
+}
+
+/* Cards */
+.card {
+  background-color: rgb(var(--color-surface)); /* White background for cards */
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  border: 1px solid rgb(var(--color-border));
+  height: fit-content;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgb(var(--color-border) / 0.7);
+  /* background-color: rgb(var(--color-primary-light) / 0.1); Optional: light primary tint for header */
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 600;
+  color: rgb(var(--color-primary-dark)); /* Icon color */
+}
+
+.card-title h2, .card-title h3, .card-title h4 {
+  margin: 0;
+  font-weight: 600;
+  font-family: var(--font-family-heading);
+  color: rgb(var(--color-primary-dark)); /* Title text color matching icon */
+  letter-spacing: -0.02em;
+}
+
+.card-content {
+  padding: 1.5rem;
+}
+
+/* Form Elements */
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.form-row.two-cols {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .form-row.two-cols {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: rgb(var(--color-text));
+}
+
+.form-label.required::after {
+  content: "*";
+  color: rgb(var(--color-danger));
+  margin-left: 0.25rem;
+}
+
+.form-input, .form-select, .form-textarea {
+  display: block;
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  background-color: rgb(var(--color-bg)); /* Changed: subtle contrast with card */
+  border: 1px solid rgb(var(--color-border));
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  font-family: var(--font-family-sans);
+  line-height: 1.5;
+  color: rgb(var(--color-text));
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: rgb(var(--color-primary));
+  box-shadow: 0 0 0 3px rgb(var(--color-primary-light) / 0.5); /* Made shadow slightly more visible */
+  outline: none;
+  background-color: rgb(var(--color-surface)); /* On focus, revert to white for clarity */
+}
+
+.form-input::placeholder, .form-textarea::placeholder {
+  color: rgb(var(--color-text-muted) / 0.7);
+}
+
+.form-input:disabled, .form-select:disabled, .form-textarea:disabled {
+  background-color: rgb(var(--color-surface-muted) / 0.5);
+  color: rgb(var(--color-text-muted));
   cursor: not-allowed;
-  @apply bg-gray-100 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400;
 }
 
-.custom-scrollbar-minimal::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-.custom-scrollbar-minimal::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar-minimal::-webkit-scrollbar-thumb {
-  background-color: #9ca3af;
-  border-radius: 3px;
-}
-.custom-scrollbar-minimal::-webkit-scrollbar-thumb:hover {
-  background-color: #6b7280;
+.form-textarea {
+  min-height: 5rem;
+  resize: vertical;
 }
 
-.dark .custom-scrollbar-minimal::-webkit-scrollbar-thumb {
-  background-color: #4b5563;
-}
-.dark .custom-scrollbar-minimal::-webkit-scrollbar-thumb:hover {
-  background-color: #374151;
+.select-wrapper {
+  position: relative;
 }
 
-.form-input-field:focus {
-  @apply ring-offset-1 dark:ring-offset-gray-800 ring-offset-white;
+.select-wrapper::after {
+  content: "▼";
+  font-size: 0.7em;
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgb(var(--color-text-muted));
+  pointer-events: none;
+}
+
+.form-select {
+  appearance: none;
+  padding-right: 2.5rem;
+}
+
+.input-with-prefix {
+  position: relative;
+  display: flex;
+}
+
+.input-prefix {
+  position: absolute;
+  left: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgb(var(--color-text-muted));
+  pointer-events: none;
+}
+
+.form-input.has-prefix {
+  padding-left: 1.75rem;
+}
+
+.form-switch {
+  display: flex;
+  align-items: center;
+  /* margin-bottom: 1.25rem; Removed mb as it's now in treatment-options-row */
+}
+
+.switch-input {
+  appearance: none;
+  width: 2.5rem;
+  height: 1.25rem;
+  background-color: rgb(var(--color-text-muted) / 0.3);
+  border-radius: 999px;
+  position: relative;
+  margin-right: 0.75rem;
+  transition: background-color var(--transition-fast);
+  cursor: pointer;
+}
+
+.switch-input:checked {
+  background-color: rgb(var(--color-primary));
+}
+
+.switch-input::before {
+  content: "";
+  position: absolute;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  left: 0.125rem;
+  top: 0.125rem;
+  background-color: white;
+  transition: transform var(--transition-normal);
+}
+
+.switch-input:checked::before {
+  transform: translateX(1.25rem);
+}
+
+.switch-label {
+  font-size: 0.9375rem;
+  cursor: pointer;
+  user-select: none;
+  color: rgb(var(--color-text));
+}
+
+/* 3. Treatment Notes Toggle Styling */
+.treatment-options-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: rgb(var(--color-primary));
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem; /* Increased gap slightly */
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+.btn-link:hover {
+  color: rgb(var(--color-primary-dark));
+  background-color: rgb(var(--color-primary-light) / 0.3); /* Lighter hover */
+}
+.btn-toggle-notes svg { /* Ensure icon size is appropriate */
+  margin-bottom: -2px; /* Small alignment tweak */
+}
+
+.treatment-notes-area {
+  margin-top: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.xray-upload {
+  margin-top: 1.25rem;
+}
+
+.upload-zone {
+  border: 2px dashed rgb(var(--color-border));
+  border-radius: var(--radius-lg);
+  padding: 2rem 1.5rem;
+  text-align: center;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+  position: relative;
+  cursor: pointer;
+  background-color: rgb(var(--color-bg) / 0.5); /* Light bg for dropzone */
+}
+
+.upload-zone:hover, .upload-zone:focus-within {
+  border-color: rgb(var(--color-primary));
+  background-color: rgb(var(--color-primary-light) / 0.15);
+}
+
+.file-input {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.upload-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.upload-icon {
+  color: rgb(var(--color-text-muted) / 0.7);
+  margin-bottom: 1rem;
+}
+
+.upload-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.upload-browse {
+  color: rgb(var(--color-primary));
+  cursor: pointer;
+  font-weight: 500;
+  transition: color var(--transition-fast);
+  text-decoration: underline;
+}
+
+.upload-browse:hover {
+  color: rgb(var(--color-primary-dark));
+}
+
+.upload-text strong {
+  font-weight: 500;
+  color: rgb(var(--color-text));
+}
+
+.upload-text small {
+  color: rgb(var(--color-text-muted));
+  font-size: 0.75rem;
+}
+
+.upload-file-info {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background-color: rgb(var(--color-primary-light) / 0.15);
+  border-radius: var(--radius-md);
+  border: 1px solid rgb(var(--color-primary-light) / 0.4);
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgb(var(--color-primary-dark));
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.file-name {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-clear-file {
+  background: none;
+  border: none;
+  color: rgb(var(--color-text-muted));
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.btn-clear-file:hover {
+  color: rgb(var(--color-danger));
+  background-color: rgb(var(--color-danger) / 0.1);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  padding: 0.625rem 1.25rem;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  border: 1px solid transparent;
+  text-decoration: none; /* For any link-styled buttons */
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  border-radius: var(--radius-sm);
+}
+
+.btn-primary {
+  background-color: rgb(var(--color-primary));
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: rgb(var(--color-primary-dark));
+}
+
+.btn-secondary {
+  background-color: rgb(var(--color-secondary));
+  color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: rgb(var(--color-secondary) / 0.9); /* Adjust if var(--color-secondary) is an RGB triplet */
+  /* Consider using a darker shade variable or HSL for manipulation */
+}
+
+.btn-outline {
+  background-color: transparent;
+  border: 1px solid rgb(var(--color-border));
+  color: rgb(var(--color-text-muted));
+}
+
+.btn-outline:hover:not(:disabled) {
+  background-color: rgb(var(--color-surface-hover));
+  color: rgb(var(--color-text));
+  border-color: rgb(var(--color-border) / 0.7);
+}
+
+.btn-subtle { /* New style for less prominent buttons like 'Go Back' */
+  background-color: transparent;
+  border: 1px solid rgb(var(--color-border));
+  color: rgb(var(--color-text-muted));
+}
+.btn-subtle:hover:not(:disabled) {
+  background-color: rgb(var(--color-surface-hover));
+  color: rgb(var(--color-text));
+  border-color: rgb(var(--color-border) / 0.7);
+}
+
+
+.btn-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-danger-subtle {
+  color: rgb(var(--color-danger));
+  background-color: transparent;
+}
+
+.btn-danger-subtle:hover {
+  background-color: rgb(var(--color-danger) / 0.1);
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border-radius: var(--radius-md);
+}
+
+.btn-xs {
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border-radius: var(--radius-sm);
+}
+
+.btn-icon.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding-top: 1.5rem;
+  padding-bottom: 1rem;
+  border-top: 1px solid rgb(var(--color-border));
+  margin-top: 2rem;
+}
+
+/* Treatments */
+.treatments-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.treatments-header {
+  position: relative; /* Change from sticky to relative */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgb(var(--color-border));
+  background-color: rgb(var(--color-surface)); /* Solid background */
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  color: rgb(var(--color-primary-dark)); /* Match icon color */
+}
+
+.section-title h2, .section-title h3, .section-title h4 {
+  margin: 0;
+  font-weight: 600;
+  color: inherit; /* Inherit from .section-title */
+}
+
+/* Empty States */
+.empty-state {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  background-color: rgb(var(--color-surface));
+  border-radius: var(--radius-lg);
+  border: 1px solid rgb(var(--color-border));
+  color: rgb(var(--color-text-muted));
+}
+
+.empty-state-icon {
+  margin: 0 auto 1rem;
+  width: 3.5rem;
+  height: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: rgb(var(--color-surface-muted));
+  color: rgb(var(--color-text-muted) / 0.8);
+}
+
+.empty-state h3 {
+  margin: 0 0 0.5rem;
+  font-weight: 500;
+  color: rgb(var(--color-text));
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.steps-empty-state {
+  padding: 1.25rem;
+  text-align: center;
+  background-color: rgb(var(--color-bg));
+  border-radius: var(--radius-md);
+  color: rgb(var(--color-text-muted));
+  font-size: 0.9375rem;
+}
+
+/* Treatment Steps */
+.treatment-steps {
+  margin-top: 2rem;
+  border-top: 1px solid rgb(var(--color-border) / 0.7);
+  padding-top: 1.5rem;
+}
+
+.steps-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.steps-header .section-title { /* Ensure step section titles also use primary color */
+  color: rgb(var(--color-primary-dark));
+}
+.steps-header .section-title h4 {
+   color: rgb(var(--color-primary-dark));
+}
+
+.steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.step-item {
+  background-color: rgb(var(--color-bg));
+  border-radius: var(--radius-md);
+  border: 1px solid rgb(var(--color-border));
+  overflow: hidden;
+}
+
+.step-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.625rem 1rem;
+  background-color: rgb(var(--color-surface-muted) / 0.5);
+  border-bottom: 1px solid rgb(var(--color-border) / 0.7);
+}
+
+.step-number {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(var(--color-text));
+}
+
+.step-content {
+  padding: 1rem;
+}
+
+/* Alert */
+.alert {
+  display: flex;
+  align-items: flex-start;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 1.5rem;
+  position: relative;
+  font-size: 0.9375rem;
+}
+
+.alert-error {
+  background-color: rgb(254 226 226 / 0.8); /* red-100 with slight transparency */
+  border-left: 4px solid rgb(var(--color-danger));
+  color: rgb(153 27 27); /* darker red-800 */
+}
+
+.dark .alert-error {
+  background-color: rgb(127 29 29 / 0.5);
+  border-color: rgb(220 38 38);
+  color: rgb(254 202 202);
+}
+
+.alert-icon {
+  flex-shrink: 0;
+  margin-right: 0.85rem; /* Slightly more space */
+  margin-top: 0.125rem;
+  width: 1.35rem; /* Slightly larger icon */
+  height: 1.35rem;
+}
+
+.alert-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  color: currentColor;
+  opacity: 0.7; /* Slightly more visible */
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+}
+
+.alert-close:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.07);
+}
+
+/* Transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--transition-normal);
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.expand-enter-active,
+.expand-leave-active {
+  transition: all var(--transition-normal) ease-in-out; /* Smoother easing */
+  max-height: 600px; /* Increased max-height for larger content */
+  overflow: hidden;
+}
+.expand-enter-from,
+.expand-leave-to {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0; /* Smooth out padding transitions */
+  padding-bottom: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  overflow: hidden;
+}
+
+.treatment-list-move,
+.step-list-move {
+  transition: transform var(--transition-normal) ease-in-out;
+}
+
+.treatment-list-enter-active,
+.step-list-enter-active {
+  transition: all var(--transition-normal) ease-out;
+}
+
+.treatment-list-leave-active,
+.step-list-leave-active {
+  transition: all var(--transition-normal) ease-in;
+  position: absolute; /* Keep for leave animations */
+  width: calc(100% - 2 * 1.5rem); /* Adjust if card has padding, for treatment cards */
+}
+/* For step-list, width might need to be relative to its parent */
+
+
+.treatment-list-enter-from,
+.treatment-list-leave-to,
+.step-list-enter-from,
+.step-list-leave-to {
+  opacity: 0;
+  transform: translateY(20px); /* Slightly less dramatic shift oii*/
+}
+
+/* Condition badges */
+.condition-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.condition-badge {
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  background-color: rgb(var(--color-bg));
+  color: rgb(var(--color-text));
+  border: 1px solid rgb(var(--color-border));
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.condition-badge:hover {
+  background-color: rgb(var(--color-primary-light) / 0.2);
+  border-color: rgb(var(--color-primary-light));
+}
+
+.condition-badge-selected {
+  background-color: rgb(var(--color-primary));
+  color: white;
+  border-color: rgb(var(--color-primary));
+}
+
+.condition-badge-selected:hover {
+  background-color: rgb(var(--color-primary-dark));
+  border-color: rgb(var(--color-primary-dark));
+}
+
+.condition-badge-other.condition-badge-selected {
+  background-color: rgb(var(--color-secondary));
+  border-color: rgb(var(--color-secondary));
+}
+
+.condition-badge-other.condition-badge-selected:hover {
+  background-color: rgb(var(--color-secondary) / 0.9);
+  border-color: rgb(var(--color-secondary) / 0.9);
+}
+
+/* Date picker styles */
+.date-picker-wrapper :deep(.dp__main) {
+  font-family: var(--font-family-sans);
+}
+
+.date-picker-wrapper :deep(.dp__input) {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  background-color: rgb(var(--color-bg)); 
+  border: 1px solid rgb(var(--color-border));
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  font-family: var(--font-family-sans);
+  line-height: 1.5;
+  color: rgb(var(--color-text));
+}
+
+.date-picker-wrapper :deep(.dp__input:focus) {
+  border-color: rgb(var(--color-primary));
+  box-shadow: 0 0 0 3px rgb(var(--color-primary-light) / 0.5);
+  outline: none;
+  background-color: rgb(var(--color-surface));
+}
+
+.date-picker-wrapper :deep(.dp__calendar_header) {
+  font-weight: 500;
+}
+
+.date-picker-wrapper :deep(.dp__active_date) {
+  background-color: rgb(var(--color-primary));
+}
+
+.date-picker-wrapper :deep(.dp__today) {
+  border-color: rgb(var(--color-primary));
+}
+
+/* Status tabs */
+.status-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  overflow-x: auto;
+  padding: 0.25rem 0;
+}
+
+.status-tab {
+  padding: 0.5rem 0.875rem;
+  border-radius: 9999px; /* Fully rounded for pill shape */
+  font-size: 0.875rem;
+  font-weight: 500;
+  background-color: rgb(var(--color-bg));
+  color: rgb(var(--color-text-muted));
+  border: 1px solid rgb(var(--color-border));
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.status-tab:hover {
+  background-color: rgb(var(--color-surface-hover));
+}
+
+.status-tab-active {
+  color: white;
+}
+
+.status-tab-blue.status-tab-active {
+  background-color: rgb(37 99 235); /* blue-600 */
+  border-color: rgb(30 64 175);
+}
+
+.status-tab-indigo.status-tab-active {
+  background-color: rgb(79 70 229); /* indigo-600 */
+  border-color: rgb(67 56 202);
+}
+
+.status-tab-purple.status-tab-active {
+  background-color: rgb(147 51 234); /* purple-600 */
+  border-color: rgb(126 34 206);
+}
+
+.status-tab-yellow.status-tab-active {
+  background-color: rgb(202 138 4); /* yellow-600 */
+  border-color: rgb(161 98 7);
+}
+
+.status-tab-green.status-tab-active {
+  background-color: rgb(22 163 74); /* green-600 */
+  border-color: rgb(21 128 61);
+}
+
+.status-tab-emerald.status-tab-active {
+  background-color: rgb(5 150 105); /* emerald-600 */
+  border-color: rgb(4 120 87);
+}
+
+.status-tab-red.status-tab-active {
+  background-color: rgb(220 38 38); /* red-600 */
+  border-color: rgb(185 28 28);
+}
+
+/* Step status tabs111111 */
+.step-status-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.step-status-tabs .status-tab {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
 }
 </style>
