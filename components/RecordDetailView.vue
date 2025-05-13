@@ -43,36 +43,18 @@
                          placeholder="Enter tooth number">
                 </div>
                 <div class="form-group">
-                  <label class="form-label required">Record Status</label>
-                  <div class="status-progress-container">
-                    <div class="status-progress-bar">
-                      <div class="status-progress-line"></div>
-                      <div 
-                        class="status-progress-fill"
-                        :style="{ 
-                          width: `${((statusOptions.find(s => s.value === formData.status)?.step || 1) - 1) / (statusOptions.length - 1) * 100}%` 
-                        }"
-                      ></div>
-                    </div>
-                    <UTabs 
-                      v-model="formData.status" 
-                      :items="statusOptions.map(s => ({ label: s.label, slot: s.value }))" 
-                      class="w-full" 
-                      variant="pills"
-                      size="md"
-                    >
-                      <template #item="{ item }">
-                        <div 
-                          class="status-progress-item"
-                          :class="[
-                            `status-color-${statusOptions.find(s => s.value === item.slot)?.color}`,
-                            formData.status === item.slot ? 'active' : ''
-                          ]"
-                        >
-                          {{ item.label }}
-                        </div>
-                      </template>
-                    </UTabs>
+                  <label for="detail_status" class="form-label required">Record Status</label>
+                  <div class="select-wrapper">
+                    <select id="detail_status"
+                            v-model="formData.status"
+                            required
+                            class="form-select status-select">
+                      <option v-for="status in statusOptions" 
+                              :key="status.value" 
+                              :value="status.value">
+                        {{ status.label }}
+                      </option>
+                    </select>
                   </div>
                 </div>
               </div>
@@ -315,22 +297,22 @@
                           <div class="form-row two-cols">
                             <div class="form-group">
                               <label :for="`detail_step_date_${treatmentIndex}_${stepIndex}`" class="form-label">Date</label>
-                              <UPopover>
+                              <UPopover :popper="{ placement: 'bottom-start' }">
                                 <UButton 
-                                  color="neutral" 
-                                  variant="subtle" 
-                                  icon="i-lucide-calendar"
                                   :id="`detail_step_date_${treatmentIndex}_${stepIndex}`"
-                                  class="date-picker-button w-full justify-start"
-                                >
-                                  {{ step.step_date ? formatDateDisplay(step.step_date) : 'Select a date' }}
-                                </UButton>
-                                <template #content>
+                                  class="date-picker-button"
+                                  color="white"
+                                  variant="outline"
+                                  icon="i-heroicons-calendar-days-20-solid"
+                                  :label="step.step_date ? getFormattedDate(step.step_date) : 'Select date'"
+                                />
+                                <template #panel="{ close }">
                                   <UCalendar 
                                     v-model="step.step_date" 
                                     class="p-2" 
                                     :min="new Date(2020, 0, 1)"
                                     :max="new Date(2030, 11, 31)"
+                                    @update:model-value="close"
                                   />
                                 </template>
                               </UPopover>
@@ -384,25 +366,24 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, h, computed } from 'vue'; // h is for custom transition components // Added computed
+import { ref, watch, onMounted, h } from 'vue';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import {
   X, ClipboardEdit, LoaderCircle, Image, ArrowLeft, FileText,
   ListChecks, PlusCircle, Info, Stethoscope, Trash2, UploadCloud,
-  ListOrdered, Plus, AlertTriangle, MessageSquare // Added MessageSquare, ArrowLeft
+  ListOrdered, Plus, AlertTriangle, MessageSquare
 } from 'lucide-vue-next';
 
 // Function to format date for display
-const formatDateDisplay = (dateString) => {
-  if (!dateString) return 'Select a date';
+const getFormattedDate = (date) => {
+  if (!date) return 'Select date';
   try {
-    const date = new Date(dateString);
-    // Check if date is valid
-    if (isNaN(date.getTime())) {
+    const dateObj = date instanceof Date ? date : new Date(date);
+    if (isNaN(dateObj.getTime())) {
       return 'Invalid date';
     }
-    return date.toLocaleDateString('en-US', {
+    return dateObj.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -461,8 +442,6 @@ const statusOptions = [
   { value: 'intreatment', label: 'In Treatment', color: 'yellow', step: 3 },
   { value: 'completed', label: 'Completed', color: 'emerald', step: 4 }
 ];
-
- 
 
 const stepStatusOptions = [
   { value: 'pending', label: 'Pending', color: 'blue' },
@@ -684,10 +663,11 @@ const handleSubmit = async () => {
     isSubmitting.value = false;
     return;
   }
+  
   if (!formData.value.condition || (formData.value.condition === 'other' && !formData.value.other_condition_text)) {
     error.value = 'Condition is required.';
-     if(formData.value.condition === 'other' && !formData.value.other_condition_text) {
-        error.value = 'Please specify the other condition.';
+    if(formData.value.condition === 'other' && !formData.value.other_condition_text) {
+      error.value = 'Please specify the other condition.';
     }
     isSubmitting.value = false;
     return;
@@ -746,17 +726,19 @@ const handleSubmit = async () => {
     }))
   };
 
- Object.keys(payload).forEach(key => {
+  // Clean up the payload
+  Object.keys(payload).forEach(key => {
     if (payload[key] === undefined || payload[key] === '') {
       if (key !== 'notes') { // Allow empty notes
         delete payload[key];
       }
     }
   });
-   payload.treatments = payload.treatments.map(treatment => {
+  
+  payload.treatments = payload.treatments.map(treatment => {
     const cleanedTreatment = { ...treatment };
     Object.keys(cleanedTreatment).forEach(tKey => {
-      if (cleanedTreatment[tKey] === undefined || cleanedTreatment[tKey] === '' || (Array.isArray(cleanedTreatment[tKey]) && cleanedTreatment[tKey].length === 0) ) {
+      if (cleanedTreatment[tKey] === undefined || cleanedTreatment[tKey] === '' || (Array.isArray(cleanedTreatment[tKey]) && cleanedTreatment[tKey].length === 0)) {
         if (tKey === 'steps' && Array.isArray(cleanedTreatment[tKey]) && cleanedTreatment[tKey].length === 0) {
            delete cleanedTreatment[tKey];
         } else if (tKey !== 'notes' && (cleanedTreatment[tKey] === undefined || cleanedTreatment[tKey] === '')) { // Allow empty notes for treatment
@@ -764,6 +746,7 @@ const handleSubmit = async () => {
         }
       }
     });
+    
     if (cleanedTreatment.steps) {
       cleanedTreatment.steps = cleanedTreatment.steps.map(step => {
         const cleanedStep = { ...step };
@@ -778,11 +761,11 @@ const handleSubmit = async () => {
         });
         return cleanedStep;
       });
-       if (cleanedTreatment.steps.length === 0) delete cleanedTreatment.steps;
+      
+      if (cleanedTreatment.steps.length === 0) delete cleanedTreatment.steps;
     }
     return cleanedTreatment;
   });
-
 
   try {
     const headers = {
@@ -806,13 +789,13 @@ const handleSubmit = async () => {
         if (err.response.data.error) {
           errorMessage = `Failed to save: ${err.response.data.error}`;
         } else if (err.response.data.detail) {
-           if (typeof err.response.data.detail === 'string') {
-              errorMessage = `Failed to save: ${err.response.data.detail}`;
+          if (typeof err.response.data.detail === 'string') {
+            errorMessage = `Failed to save: ${err.response.data.detail}`;
           } else if (Array.isArray(err.response.data.detail)) {
-              const messages = err.response.data.detail.map(d => `${d.loc.join(' -> ')}: ${d.msg}`).join('; ');
-              errorMessage = `Validation failed: ${messages}`;
+            const messages = err.response.data.detail.map(d => `${d.loc.join(' -> ')}: ${d.msg}`).join('; ');
+            errorMessage = `Validation failed: ${messages}`;
           } else {
-              errorMessage = 'Validation failed. Please check your input.';
+            errorMessage = 'Validation failed. Please check your input.';
           }
         } else if (err.response.data.errors) {
           const messages = Object.values(err.response.data.errors).flat();
@@ -830,11 +813,9 @@ const handleSubmit = async () => {
 
 onMounted(() => {
   // formData and treatmentNotesVisibility initialization is handled by the immediate watch on recordDataProp
-  // If creating new and no recordDataProp is passed, initialFormData() is used by the watch.
 });
 
-
-// Define reusable transition components (using Vue's h for brevity if needed, or keep as is)
+// Define reusable transition components
 const TransitionFade = {
   name: 'fade',
   setup(props, { slots }) {
@@ -851,17 +832,16 @@ const TransitionExpand = {
   setup(props, { slots }) {
     return () => h('transition', {
       name: 'expand',
-      appear: true // Can be true or false based on preference
+      appear: true
     }, slots.default?.())
   }
 };
 
-// Function to be called before submitting to ensure dates are in the correct format
+// Function to format dates before submission
 const formatDatesBeforeSubmit = () => {
   formData.value.treatments.forEach(treatment => {
     if (treatment.steps) {
       treatment.steps.forEach(step => {
-        // Format step_date to ISO string if it's a Date object
         if (step.step_date instanceof Date) {
           step.step_date = step.step_date.toISOString().split('T')[0];
         }
@@ -880,50 +860,38 @@ const formatDatesBeforeSubmit = () => {
   --color-danger: 239 68 68; /* red-500 */
   --color-success: 34 197 94; /* green-500 */
   --color-warning: 245 158 11; /* amber-500 */
-
   --color-surface: 255 255 255; /* white - For card backgrounds */
   --color-surface-hover: 243 244 246; /* gray-100 */
   --color-surface-muted: 249 250 251; /* gray-50 */
-
   --color-bg: 248 250 252; /* slate-50 - For page background and input backgrounds */
   --color-border: 226 232 240; /* slate-200 */
-
   --color-text: 15 23 42; /* slate-900 */
   --color-text-muted: 100 116 139; /* slate-500 */
-
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
-
   --transition-fast: 150ms ease;
   --transition-normal: 250ms ease;
-
   --container-max: 1280px;
   --container-padding: 1.5rem;
-
   --form-control-height: 2.75rem;
   --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
   --font-family-heading: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* Dark theme remains for context, but primary changes target light theme based on user description */
 .dark {
   --color-primary: 56 189 248; /* sky-400 */
   --color-primary-light: 2 132 199; /* sky-600 */
   --color-primary-dark: 125 211 252; /* sky-300 */
-
   --color-surface: 31 41 55; /* gray-800 */
   --color-surface-hover: 55 65 81; /* gray-700 */
   --color-surface-muted: 17 24 39; /* gray-900 */
-
   --color-bg: 17 24 39; /* gray-900 */
   --color-border: 55 65 81; /* gray-700 */
-
   --color-text: 248 250 252; /* slate-50 */
   --color-text-muted: 156 163 175; /* gray-400 */
 }
@@ -931,16 +899,12 @@ const formatDatesBeforeSubmit = () => {
 .record-detail-view {
   min-height: calc(100vh - var(--header-height, 0px));
   background-color: rgb(var(--color-bg));
-  padding-bottom: 2rem; /* Added padding at bottom */
-  font-family: var(--font-family-sans); /* Apply global font */
+  padding-bottom: 2rem;
+  font-family: var(--font-family-sans);
   letter-spacing: -0.01em;
   line-height: 1.5;
 }
 
-/* Import Inter font */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-/* 1. Back Button Styling */
 .top-navigation-bar {
   max-width: var(--container-max);
   margin: 0 auto;
@@ -956,12 +920,8 @@ const formatDatesBeforeSubmit = () => {
   font-size: 0.9rem;
   font-weight: 500;
   color: rgb(var(--color-text-muted));
-  /* Removed explicit background-color to inherit from btn-subtle or default */
-  /* border: 1px solid rgb(var(--color-border)); */ /* Covered by btn-subtle */
-  /* border-radius: var(--radius-md); */ /* Covered by btn */
-  /* cursor: pointer; */ /* Covered by btn */
-  /* transition: all var(--transition-fast); */ /* Covered by btn */
 }
+
 .btn-back:hover {
   color: rgb(var(--color-primary-dark));
   border-color: rgb(var(--color-primary-dark) / 0.5);
@@ -973,12 +933,11 @@ const formatDatesBeforeSubmit = () => {
   padding: 0 var(--container-padding);
 }
 
-/* Layout */
 .main-layout {
   display: grid;
   grid-template-columns: 1fr;
   gap: 2rem;
-  margin-top: 1rem; /* Space after back button */
+  margin-top: 1rem;
   margin-bottom: 2rem;
 }
 
@@ -986,13 +945,11 @@ const formatDatesBeforeSubmit = () => {
   .main-layout {
     grid-template-columns: 2fr 3fr;
     gap: 2.5rem;
-    border-right: none; /* Remove right border */
   }
 }
 
-/* Cards */
 .card {
-  background-color: rgb(var(--color-surface)); /* White background for cards */
+  background-color: rgb(var(--color-surface));
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
@@ -1006,7 +963,6 @@ const formatDatesBeforeSubmit = () => {
   align-items: center;
   padding: 1.25rem 1.5rem;
   border-bottom: 1px solid rgb(var(--color-border) / 0.7);
-  /* background-color: rgb(var(--color-primary-light) / 0.1); Optional: light primary tint for header */
 }
 
 .card-title {
@@ -1014,14 +970,14 @@ const formatDatesBeforeSubmit = () => {
   align-items: center;
   gap: 0.75rem;
   font-weight: 600;
-  color: rgb(var(--color-primary-dark)); /* Icon color */
+  color: rgb(var(--color-primary-dark));
 }
 
 .card-title h2, .card-title h3, .card-title h4 {
   margin: 0;
   font-weight: 600;
   font-family: var(--font-family-heading);
-  color: rgb(var(--color-primary-dark)); /* Title text color matching icon */
+  color: rgb(var(--color-primary-dark));
   letter-spacing: -0.02em;
 }
 
@@ -1029,7 +985,6 @@ const formatDatesBeforeSubmit = () => {
   padding: 1.5rem;
 }
 
-/* Form Elements */
 .form-group {
   margin-bottom: 1.25rem;
 }
@@ -1069,7 +1024,7 @@ const formatDatesBeforeSubmit = () => {
   display: block;
   width: 100%;
   padding: 0.625rem 0.875rem;
-  background-color: rgb(var(--color-bg)); /* Changed: subtle contrast with card */
+  background-color: rgb(var(--color-bg));
   border: 1px solid rgb(var(--color-border));
   border-radius: var(--radius-md);
   font-size: 0.9375rem;
@@ -1081,9 +1036,9 @@ const formatDatesBeforeSubmit = () => {
 
 .form-input:focus, .form-select:focus, .form-textarea:focus {
   border-color: rgb(var(--color-primary));
-  box-shadow: 0 0 0 3px rgb(var(--color-primary-light) / 0.5); /* Made shadow slightly more visible */
+  box-shadow: 0 0 0 3px rgb(var(--color-primary-light) / 0.5);
   outline: none;
-  background-color: rgb(var(--color-surface)); /* On focus, revert to white for clarity */
+  background-color: rgb(var(--color-surface));
 }
 
 .form-input::placeholder, .form-textarea::placeholder {
@@ -1142,7 +1097,6 @@ const formatDatesBeforeSubmit = () => {
 .form-switch {
   display: flex;
   align-items: center;
-  /* margin-bottom: 1.25rem; Removed mb as it's now in treatment-options-row */
 }
 
 .switch-input {
@@ -1184,7 +1138,6 @@ const formatDatesBeforeSubmit = () => {
   color: rgb(var(--color-text));
 }
 
-/* 3. Treatment Notes Toggle Styling */
 .treatment-options-row {
   display: flex;
   justify-content: space-between;
@@ -1202,18 +1155,20 @@ const formatDatesBeforeSubmit = () => {
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem; /* Increased gap slightly */
+  gap: 0.4rem;
   font-weight: 500;
   border-radius: var(--radius-sm);
   font-size: 0.875rem;
   transition: color var(--transition-fast), background-color var(--transition-fast);
 }
+
 .btn-link:hover {
   color: rgb(var(--color-primary-dark));
-  background-color: rgb(var(--color-primary-light) / 0.3); /* Lighter hover */
+  background-color: rgb(var(--color-primary-light) / 0.3);
 }
-.btn-toggle-notes svg { /* Ensure icon size is appropriate */
-  margin-bottom: -2px; /* Small alignment tweak */
+
+.btn-toggle-notes svg {
+  margin-bottom: -2px;
 }
 
 .treatment-notes-area {
@@ -1233,7 +1188,7 @@ const formatDatesBeforeSubmit = () => {
   transition: border-color var(--transition-fast), background-color var(--transition-fast);
   position: relative;
   cursor: pointer;
-  background-color: rgb(var(--color-bg) / 0.5); /* Light bg for dropzone */
+  background-color: rgb(var(--color-bg) / 0.5);
 }
 
 .upload-zone:hover, .upload-zone:focus-within {
@@ -1325,6 +1280,9 @@ const formatDatesBeforeSubmit = () => {
   color: rgb(var(--color-text-muted));
   cursor: pointer;
   padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: var(--radius-sm);
   transition: color var(--transition-fast), background-color var(--transition-fast);
 }
@@ -1334,7 +1292,6 @@ const formatDatesBeforeSubmit = () => {
   background-color: rgb(var(--color-danger) / 0.1);
 }
 
-/* Buttons */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -1347,7 +1304,7 @@ const formatDatesBeforeSubmit = () => {
   font-size: 0.9375rem;
   line-height: 1.5;
   border: 1px solid transparent;
-  text-decoration: none; /* For any link-styled buttons */
+  text-decoration: none;
 }
 
 .btn:disabled {
@@ -1376,8 +1333,7 @@ const formatDatesBeforeSubmit = () => {
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: rgb(var(--color-secondary) / 0.9); /* Adjust if var(--color-secondary) is an RGB triplet */
-  /* Consider using a darker shade variable or HSL for manipulation */
+  background-color: rgb(var(--color-secondary) / 0.9);
 }
 
 .btn-outline {
@@ -1392,17 +1348,17 @@ const formatDatesBeforeSubmit = () => {
   border-color: rgb(var(--color-border) / 0.7);
 }
 
-.btn-subtle { /* New style for less prominent buttons like 'Go Back' */
+.btn-subtle {
   background-color: transparent;
   border: 1px solid rgb(var(--color-border));
   color: rgb(var(--color-text-muted));
 }
+
 .btn-subtle:hover:not(:disabled) {
   background-color: rgb(var(--color-surface-hover));
   color: rgb(var(--color-text));
   border-color: rgb(var(--color-border) / 0.7);
 }
-
 
 .btn-with-icon {
   display: inline-flex;
@@ -1445,7 +1401,6 @@ const formatDatesBeforeSubmit = () => {
   to { transform: rotate(360deg); }
 }
 
-/* Form Actions */
 .form-actions {
   display: flex;
   justify-content: flex-end;
@@ -1456,7 +1411,6 @@ const formatDatesBeforeSubmit = () => {
   margin-top: 2rem;
 }
 
-/* Treatments */
 .treatments-container {
   display: flex;
   flex-direction: column;
@@ -1464,7 +1418,7 @@ const formatDatesBeforeSubmit = () => {
 }
 
 .treatments-header {
-  position: relative; /* Change from sticky to relative */
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1472,23 +1426,22 @@ const formatDatesBeforeSubmit = () => {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   border: 1px solid rgb(var(--color-border));
-  background-color: rgb(var(--color-surface)); /* Solid background */
+  background-color: rgb(var(--color-surface));
 }
 
 .section-title {
   display: flex;
   align-items: center;
   gap: 0.625rem;
-  color: rgb(var(--color-primary-dark)); /* Match icon color */
+  color: rgb(var(--color-primary-dark));
 }
 
 .section-title h2, .section-title h3, .section-title h4 {
   margin: 0;
   font-weight: 600;
-  color: inherit; /* Inherit from .section-title */
+  color: inherit;
 }
 
-/* Empty States */
 .empty-state {
   padding: 3rem 1.5rem;
   text-align: center;
@@ -1530,7 +1483,6 @@ const formatDatesBeforeSubmit = () => {
   font-size: 0.9375rem;
 }
 
-/* Treatment Steps */
 .treatment-steps {
   margin-top: 2rem;
   border-top: 1px solid rgb(var(--color-border) / 0.7);
@@ -1543,11 +1495,13 @@ const formatDatesBeforeSubmit = () => {
   align-items: center;
   margin-bottom: 1rem;
 }
-.steps-header .section-title { /* Ensure step section titles also use primary color */
+
+.steps-header .section-title {
   color: rgb(var(--color-primary-dark));
 }
+
 .steps-header .section-title h4 {
-   color: rgb(var(--color-primary-dark));
+  color: rgb(var(--color-primary-dark));
 }
 
 .steps-list {
@@ -1582,7 +1536,6 @@ const formatDatesBeforeSubmit = () => {
   padding: 1rem;
 }
 
-/* Alert */
 .alert {
   display: flex;
   align-items: flex-start;
@@ -1594,9 +1547,9 @@ const formatDatesBeforeSubmit = () => {
 }
 
 .alert-error {
-  background-color: rgb(254 226 226 / 0.8); /* red-100 with slight transparency */
+  background-color: rgb(254 226 226 / 0.8);
   border-left: 4px solid rgb(var(--color-danger));
-  color: rgb(153 27 27); /* darker red-800 */
+  color: rgb(153 27 27);
 }
 
 .dark .alert-error {
@@ -1607,9 +1560,9 @@ const formatDatesBeforeSubmit = () => {
 
 .alert-icon {
   flex-shrink: 0;
-  margin-right: 0.85rem; /* Slightly more space */
+  margin-right: 0.85rem;
   margin-top: 0.125rem;
-  width: 1.35rem; /* Slightly larger icon */
+  width: 1.35rem;
   height: 1.35rem;
 }
 
@@ -1620,7 +1573,7 @@ const formatDatesBeforeSubmit = () => {
   background: none;
   border: none;
   color: currentColor;
-  opacity: 0.7; /* Slightly more visible */
+  opacity: 0.7;
   cursor: pointer;
   padding: 0.25rem;
   display: flex;
@@ -1634,11 +1587,11 @@ const formatDatesBeforeSubmit = () => {
   background-color: rgba(0, 0, 0, 0.07);
 }
 
-/* Transitions */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity var(--transition-normal);
 }
+
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
@@ -1646,15 +1599,16 @@ const formatDatesBeforeSubmit = () => {
 
 .expand-enter-active,
 .expand-leave-active {
-  transition: all var(--transition-normal) ease-in-out; /* Smoother easing */
-  max-height: 600px; /* Increased max-height for larger content */
+  transition: all var(--transition-normal) ease-in-out;
+  max-height: 600px;
   overflow: hidden;
 }
+
 .expand-enter-from,
 .expand-leave-to {
   max-height: 0;
   opacity: 0;
-  padding-top: 0; /* Smooth out padding transitions */
+  padding-top: 0;
   padding-bottom: 0;
   margin-top: 0;
   margin-bottom: 0;
@@ -1674,21 +1628,18 @@ const formatDatesBeforeSubmit = () => {
 .treatment-list-leave-active,
 .step-list-leave-active {
   transition: all var(--transition-normal) ease-in;
-  position: absolute; /* Keep for leave animations */
-  width: calc(100% - 2 * 1.5rem); /* Adjust if card has padding, for treatment cards */
+  position: absolute;
+  width: calc(100% - 2 * 1.5rem);
 }
-/* For step-list, width might need to be relative to its parent */
-
 
 .treatment-list-enter-from,
 .treatment-list-leave-to,
 .step-list-enter-from,
 .step-list-leave-to {
   opacity: 0;
-  transform: translateY(20px); /* Slightly less dramatic shift oii*/
+  transform: translateY(20px);
 }
 
-/* Condition badges */
 .condition-badges {
   display: flex;
   flex-wrap: wrap;
@@ -1734,7 +1685,6 @@ const formatDatesBeforeSubmit = () => {
   border-color: rgb(var(--color-secondary) / 0.9);
 }
 
-/* Date picker styles */
 .date-picker-wrapper :deep(.dp__main) {
   font-family: var(--font-family-sans);
 }
@@ -1742,7 +1692,7 @@ const formatDatesBeforeSubmit = () => {
 .date-picker-wrapper :deep(.dp__input) {
   width: 100%;
   padding: 0.625rem 0.875rem;
-  background-color: rgb(var(--color-bg)); 
+  background-color: rgb(var(--color-bg));
   border: 1px solid rgb(var(--color-border));
   border-radius: var(--radius-md);
   font-size: 0.9375rem;
@@ -1770,7 +1720,6 @@ const formatDatesBeforeSubmit = () => {
   border-color: rgb(var(--color-primary));
 }
 
-/* Status tabs */
 .status-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -1782,7 +1731,7 @@ const formatDatesBeforeSubmit = () => {
 
 .status-tab {
   padding: 0.5rem 0.875rem;
-  border-radius: 9999px; /* Fully rounded for pill shape */
+  border-radius: 9999px;
   font-size: 0.875rem;
   font-weight: 500;
   background-color: rgb(var(--color-bg));
@@ -1802,41 +1751,40 @@ const formatDatesBeforeSubmit = () => {
 }
 
 .status-tab-blue.status-tab-active {
-  background-color: rgb(37 99 235); /* blue-600 */
+  background-color: rgb(37 99 235);
   border-color: rgb(30 64 175);
 }
 
 .status-tab-indigo.status-tab-active {
-  background-color: rgb(79 70 229); /* indigo-600 */
+  background-color: rgb(79 70 229);
   border-color: rgb(67 56 202);
 }
 
 .status-tab-purple.status-tab-active {
-  background-color: rgb(147 51 234); /* purple-600 */
+  background-color: rgb(147 51 234);
   border-color: rgb(126 34 206);
 }
 
 .status-tab-yellow.status-tab-active {
-  background-color: rgb(202 138 4); /* yellow-600 */
+  background-color: rgb(202 138 4);
   border-color: rgb(161 98 7);
 }
 
 .status-tab-green.status-tab-active {
-  background-color: rgb(22 163 74); /* green-600 */
+  background-color: rgb(22 163 74);
   border-color: rgb(21 128 61);
 }
 
 .status-tab-emerald.status-tab-active {
-  background-color: rgb(5 150 105); /* emerald-600 */
+  background-color: rgb(5 150 105);
   border-color: rgb(4 120 87);
 }
 
 .status-tab-red.status-tab-active {
-  background-color: rgb(220 38 38); /* red-600 */
+  background-color: rgb(220 38 38);
   border-color: rgb(185 28 28);
 }
 
-/* Step status tabs111111 */
 .step-status-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -1847,5 +1795,27 @@ const formatDatesBeforeSubmit = () => {
 .step-status-tabs .status-tab {
   padding: 0.375rem 0.75rem;
   font-size: 0.8125rem;
+}
+
+.date-picker-button {
+  text-align: left;
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  background-color: rgb(var(--color-bg)) !important;
+  border: 1px solid rgb(var(--color-border)) !important;
+  border-radius: var(--radius-md) !important;
+  font-size: 0.9375rem;
+  font-family: var(--font-family-sans);
+  line-height: 1.5;
+  color: rgb(var(--color-text)) !important;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.date-picker-button:focus {
+  border-color: rgb(var(--color-primary)) !important;
+  box-shadow: 0 0 0 3px rgb(var(--color-primary-light) / 0.5) !important;
+  outline: none;
 }
 </style>
