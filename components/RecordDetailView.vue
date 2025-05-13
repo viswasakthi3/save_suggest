@@ -297,25 +297,12 @@
                           <div class="form-row two-cols">
                             <div class="form-group">
                               <label :for="`detail_step_date_${treatmentIndex}_${stepIndex}`" class="form-label">Date</label>
-                              <UPopover :popper="{ placement: 'bottom-start' }">
-                                <UButton 
-                                  :id="`detail_step_date_${treatmentIndex}_${stepIndex}`"
-                                  class="date-picker-button"
-                                  color="white"
-                                  variant="outline"
-                                  icon="i-heroicons-calendar-days-20-solid"
-                                  :label="step.step_date ? getFormattedDate(step.step_date) : 'Select date'"
-                                />
-                                <template #panel="{ close }">
-                                  <UCalendar 
-                                    v-model="step.step_date" 
-                                    class="p-2" 
-                                    :min="new Date(2020, 0, 1)"
-                                    :max="new Date(2030, 11, 31)"
-                                    @update:model-value="close"
-                                  />
-                                </template>
-                              </UPopover>
+                              <DatePicker 
+                                :id="`detail_step_date_${treatmentIndex}_${stepIndex}`"
+                                v-model="step.step_date"
+                                placeholder="Select date"
+                                class="date-picker-custom"
+                              />
                             </div>
                             <div class="form-group">
                               <label :for="`detail_step_status_${treatmentIndex}_${stepIndex}`" class="form-label required">Status</label>
@@ -366,28 +353,30 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, h } from 'vue';
+import { ref, watch, onMounted, h, shallowRef } from 'vue';
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import DatePicker from './DatePicker.vue';
 import {
   X, ClipboardEdit, LoaderCircle, Image, ArrowLeft, FileText,
   ListChecks, PlusCircle, Info, Stethoscope, Trash2, UploadCloud,
   ListOrdered, Plus, AlertTriangle, MessageSquare
 } from 'lucide-vue-next';
 
-// Function to format date for display
+// Create a simple date formatter for consistent date presentation
 const getFormattedDate = (date) => {
   if (!date) return 'Select date';
+  
   try {
     const dateObj = date instanceof Date ? date : new Date(date);
     if (isNaN(dateObj.getTime())) {
       return 'Invalid date';
     }
-    return dateObj.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    return new Intl.DateTimeFormat('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    }).format(dateObj);
   } catch (e) {
     console.error("Error formatting date:", e);
     return 'Invalid date';
@@ -903,6 +892,7 @@ const formatDatesBeforeSubmit = () => {
   font-family: var(--font-family-sans);
   letter-spacing: -0.01em;
   line-height: 1.5;
+  margin-bottom: 100px;
 }
 
 .top-navigation-bar {
@@ -1798,24 +1788,113 @@ const formatDatesBeforeSubmit = () => {
 }
 
 .date-picker-button {
-  text-align: left;
-  width: 100%;
-  padding: 0.625rem 0.875rem;
+  text-align: left !important;
+  width: 100% !important;
+  padding: 0.625rem 0.875rem !important;
   background-color: rgb(var(--color-bg)) !important;
   border: 1px solid rgb(var(--color-border)) !important;
   border-radius: var(--radius-md) !important;
-  font-size: 0.9375rem;
-  font-family: var(--font-family-sans);
-  line-height: 1.5;
+  font-size: 0.9375rem !important;
+  font-family: var(--font-family-sans) !important;
+  line-height: 1.5 !important;
   color: rgb(var(--color-text)) !important;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  justify-content: flex-start !important;
+  height: auto !important;
 }
 
 .date-picker-button:focus {
   border-color: rgb(var(--color-primary)) !important;
   box-shadow: 0 0 0 3px rgb(var(--color-primary-light) / 0.5) !important;
+  outline: none !important;
+}
+
+/* Tailgrids DatePicker customizations */
+.date-picker-input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  background-color: rgb(var(--color-bg));
+  border: 1px solid rgb(var(--color-border));
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  font-family: var(--font-family-sans);
+  line-height: 1.5;
+  color: rgb(var(--color-text));
+}
+
+:deep(.tg-datepicker) {
+  width: 100%;
+}
+
+:deep(.tg-datepicker input) {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  background-color: rgb(var(--color-bg));
+  border: 1px solid rgb(var(--color-border));
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  font-family: var(--font-family-sans);
+  line-height: 1.5;
+  color: rgb(var(--color-text));
+}
+
+:deep(.tg-datepicker input:focus) {
+  border-color: rgb(var(--color-primary));
+  box-shadow: 0 0 0 3px rgb(var(--color-primary-light) / 0.5);
   outline: none;
+  background-color: rgb(var(--color-surface));
+}
+
+:deep(.tg-datepicker .calendar-header) {
+  background-color: rgb(var(--color-primary));
+}
+
+:deep(.tg-datepicker .selected-day) {
+  background-color: rgb(var(--color-primary));
+}
+
+:deep(.tg-datepicker .today) {
+  border-color: rgb(var(--color-primary));
+}
+
+/* Custom DatePicker styling to match the form design */
+.date-picker-custom {
+  width: 100%;
+}
+
+.date-picker-custom input {
+  display: block;
+  width: 100%;
+  padding: 0.625rem 0.875rem 0.625rem 2.5rem;
+  background-color: rgb(var(--color-bg));
+  border: 1px solid rgb(var(--color-border));
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  font-family: var(--font-family-sans);
+  line-height: 1.5;
+  color: rgb(var(--color-text));
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.date-picker-custom input:focus {
+  border-color: rgb(var(--color-primary));
+  box-shadow: 0 0 0 3px rgb(var(--color-primary-light) / 0.5);
+  outline: none;
+  background-color: rgb(var(--color-surface));
+}
+
+/* Override the calendar button colors to match your theme */
+.date-picker-custom .bg-primary {
+  background-color: rgb(var(--color-primary));
+}
+
+.date-picker-custom .hover\:bg-primary:hover {
+  background-color: rgb(var(--color-primary-dark));
+}
+
+.date-picker-custom .bg-dark {
+  background-color: rgb(var(--color-text));
 }
 </style>
