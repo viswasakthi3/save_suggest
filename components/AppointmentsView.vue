@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-4">Appointments</h2>
+    <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-6">Appointments</h2>
 
     <!-- Error Message -->
     <div v-if="error" class="mb-4 p-3 bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-md text-red-700 dark:text-red-300 text-sm flex items-center justify-between">
@@ -17,62 +17,85 @@
       </button>
     </div>
 
-    <!-- Controls -->
-    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-6 flex items-center justify-between flex-wrap gap-4">
-      <div class="flex items-center gap-4 flex-wrap">
-        <!-- Filters can be added here later -->
-        <span class="text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ appointments.length }} appointments</span>
+    <!-- Controls & Tabs -->
+    <div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div class="flex space-x-1 border border-gray-200 dark:border-gray-700 p-1 rounded-md">
+        <button
+          v-for="tab in tabs"
+          :key="tab.status"
+          @click="activeStatusFilter = tab.status"
+          :class="[
+            'px-4 py-2 text-sm font-medium rounded-md transition-colors duration-150 ease-in-out',
+            activeStatusFilter === tab.status
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+          ]"
+        >
+          {{ tab.label }}
+        </button>
       </div>
-      <button @click="openCreateAppointmentForm" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded flex items-center whitespace-nowrap">
+      <button @click="openCreateAppointmentForm" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md flex items-center whitespace-nowrap">
         <Plus class="h-5 w-5 mr-2" />
         Create Appointment
       </button>
     </div>
 
-    <!-- Appointments Table -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead class="bg-gray-50 dark:bg-gray-700">
-          <tr>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Patient</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Dentist</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Time</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Reason</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-          </tr>
-        </thead>
-        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-          <tr v-if="loading">
-            <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
-              <LoaderCircle class="h-6 w-6 animate-spin inline-block mr-2" /> Loading appointments...
-            </td>
-          </tr>
-          <tr v-else-if="appointments.length === 0">
-            <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
-              No appointments found.
-            </td>
-          </tr>
-          <tr v-for="appointment in appointments" :key="appointment.id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ appointment.patient?.name || 'N/A' }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ appointment.dentist?.name || 'N/A' }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ appointment.date }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ appointment.time }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">{{ appointment.reason }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-              <span :class="getStatusBadgeClass(appointment.status)">{{ appointment.status }}</span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-              <button @click="openEditAppointmentForm(appointment)" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200">Edit</button>
-              <button @click="deleteAppointment(appointment.id)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200">Delete</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- Appointments Grouped by Date -->
+    <div v-if="loading" class="flex justify-center items-center h-64">
+      <LoaderCircle class="animate-spin h-12 w-12 text-blue-600" />
+    </div>
+    <div v-else-if="groupedAppointments.length === 0" class="text-center py-10 text-gray-500 dark:text-gray-400">
+      <p class="text-xl mb-2">No appointments found.</p>
+      <p>Try adjusting the filters or create a new appointment.</p>
     </div>
 
-    <!-- Pagination (Optional - Add later if needed) -->
+    <div v-else class="space-y-8">
+      <div v-for="group in groupedAppointments" :key="group.date">
+        <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wider">{{ formatDateGroup(group.date) }}</h3>
+        <div class="space-y-4">
+          <div
+            v-for="appointment in group.appointments"
+            :key="appointment.id"
+            class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow duration-200 ease-in-out"
+          >
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+              <div class="flex items-center mb-3 sm:mb-0">
+                <div class="mr-4 text-center">
+                  <p class="text-xs text-red-600 dark:text-red-400 font-semibold">{{ formatDayAbbreviation(appointment.scheduled_at) }}</p>
+                  <p class="text-2xl font-bold text-gray-800 dark:text-white">{{ formatDayNumber(appointment.scheduled_at) }}</p>
+                </div>
+                <div>
+                  <p class="text-sm font-semibold text-gray-700 dark:text-gray-200">{{ formatTime(appointment.scheduled_at) }}</p>
+                  <p class="text-sm text-gray-600 dark:text-gray-400">{{ appointment.patient?.first_name }} {{ appointment.patient?.last_name }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-500">{{ appointment.reason || 'No reason provided' }}</p>
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-2 mt-3 sm:mt-0 w-full sm:w-auto justify-end">
+                <span :class="getStatusBadgeClass(appointment.status)">{{ appointment.status }}</span>
+                <div class="relative">
+                  <button @click="toggleActionsDropdown(appointment.id)" class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400">
+                    <MoreVertical class="h-5 w-5" />
+                  </button>
+                  <div
+                    v-if="activeActionsDropdown === appointment.id"
+                    class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-xl z-20 border border-gray-200 dark:border-gray-700 py-1"
+                  >
+                    <button @click="openEditAppointmentForm(appointment)" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                      <Edit3 class="h-4 w-4 mr-2" /> Edit
+                    </button>
+                    <button @click="deleteAppointment(appointment.id)" class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/50 flex items-center">
+                      <Trash2 class="h-4 w-4 mr-2" /> Delete
+                    </button>
+                    <!-- Add more actions here if needed -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Create/Edit Appointment Form Modal -->
     <CreateAppointmentForm
@@ -86,28 +109,37 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { useRouter } from 'vue-router';
-import CreateAppointmentForm from '~/components/CreateAppointmentForm.vue'; // Assuming this component exists or will be created
-import { Plus, X, LoaderCircle } from 'lucide-vue-next';
+import CreateAppointmentForm from '~/components/CreateAppointmentForm.vue';
+import { Plus, X, LoaderCircle, MoreVertical, Edit3, Trash2 } from 'lucide-vue-next';
 
 const router = useRouter();
-const appointments = ref([]);
+const allAppointments = ref([]);
 const loading = ref(true);
 const error = ref(null);
 const successMessage = ref(null);
 const showAppointmentForm = ref(false);
 const editingAppointment = ref(null);
+const activeActionsDropdown = ref(null); // To control which dropdown is open
 
 const config = useRuntimeConfig();
 const API_BASE_URL = config.public.API_BASE_URL;
 
+const tabs = [
+  { label: 'Upcoming', status: 'scheduled' }, // Assuming 'scheduled' is upcoming
+ 
+  // { label: 'Recurring', status: 'recurring' }, // If you have this status
+  { label: 'Past', status: 'completed' }, // Assuming 'completed' is past
+  { label: 'Cancelled', status: 'cancelled' },
+];
+const activeStatusFilter = ref('scheduled'); // Default to upcoming/scheduled
+
 const getAccessTokenCookie = () => {
   const token = Cookies.get('dental_access_token');
   if (!token) {
-    // Redirect to login if no token
     router.push('/dentall/login');
   }
   return token;
@@ -118,16 +150,15 @@ const clearError = () => { error.value = null; };
 const fetchAppointments = async () => {
   loading.value = true;
   clearError();
-  successMessage.value = null;
   const token = getAccessTokenCookie();
   if (!token) return;
 
   try {
     const response = await axios.get(`${API_BASE_URL}/appointments`, {
       headers: { Authorization: `Bearer ${token}` },
-      params: { per_page: 100 } // Fetch more initially, add pagination later
+      params: { per_page: 200 }
     });
-    appointments.value = response.data.appointments || [];
+    allAppointments.value = response.data.appointments || [];
   } catch (err) {
     console.error('Error fetching appointments:', err);
     if (err.response && err.response.status === 401) {
@@ -137,21 +168,71 @@ const fetchAppointments = async () => {
     } else {
       error.value = `Could not fetch appointments: ${err.message || 'Unknown error'}`;
     }
-    appointments.value = [];
+    allAppointments.value = [];
   } finally {
     loading.value = false;
   }
 };
 
+const filteredAppointments = computed(() => {
+  if (!activeStatusFilter.value || activeStatusFilter.value === 'all') {
+    return allAppointments.value;
+  }
+  return allAppointments.value.filter(app => app.status && app.status.toLowerCase() === activeStatusFilter.value.toLowerCase());
+});
+
+const groupedAppointments = computed(() => {
+  const groups = {};
+  filteredAppointments.value
+    .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at))
+    .forEach(appointment => {
+      const date = appointment.scheduled_at.split('T')[0];
+      if (!groups[date]) {
+        groups[date] = { date: date, appointments: [] };
+      }
+      groups[date].appointments.push(appointment);
+    });
+  return Object.values(groups);
+});
+
+const formatDateGroup = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+};
+
+const formatDayAbbreviation = (isoString) => {
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  return date.toLocaleDateString(undefined, { weekday: 'short' }).toUpperCase();
+};
+
+const formatDayNumber = (isoString) => {
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  return date.getDate();
+};
+
+const formatTime = (isoString) => {
+  if (!isoString) return 'N/A';
+  const date = new Date(isoString);
+  return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: true });
+};
+
 const openCreateAppointmentForm = () => {
   editingAppointment.value = null;
   clearError();
+  activeActionsDropdown.value = null;
   showAppointmentForm.value = true;
 };
 
 const openEditAppointmentForm = (appointment) => {
-  editingAppointment.value = { ...appointment }; // Create a copy to avoid modifying original directly
+  editingAppointment.value = { 
+    ...appointment, 
+    date: appointment.scheduled_at?.split('T')[0],
+    time: appointment.scheduled_at?.split('T')[1]?.substring(0,5)
+  }; 
   clearError();
+  activeActionsDropdown.value = null;
   showAppointmentForm.value = true;
 };
 
@@ -163,8 +244,8 @@ const closeAppointmentForm = () => {
 const handleAppointmentSaved = (savedAppointment) => {
   closeAppointmentForm();
   successMessage.value = editingAppointment.value ? 'Appointment updated successfully.' : 'Appointment created successfully.';
-  fetchAppointments(); // Refresh the list
-  setTimeout(() => { successMessage.value = null; }, 5000);
+  fetchAppointments();
+  setTimeout(() => { successMessage.value = null; }, 3000);
 };
 
 const handleFormError = (errorMessage) => {
@@ -174,8 +255,6 @@ const handleFormError = (errorMessage) => {
     closeAppointmentForm();
     Cookies.remove('dental_access_token', { path: '/' });
     router.push('/dentall/login');
-  } else {
-    error.value = `Form Error: ${errorMessage}`;
   }
 };
 
@@ -183,8 +262,8 @@ const deleteAppointment = async (appointmentId) => {
   if (!confirm('Are you sure you want to delete this appointment?')) {
     return;
   }
-
-  loading.value = true; // Indicate activity
+  activeActionsDropdown.value = null;
+  loading.value = true; 
   clearError();
   const token = getAccessTokenCookie();
   if (!token) return;
@@ -194,8 +273,8 @@ const deleteAppointment = async (appointmentId) => {
       headers: { Authorization: `Bearer ${token}` }
     });
     successMessage.value = 'Appointment deleted successfully.';
-    fetchAppointments(); // Refresh list
-    setTimeout(() => { successMessage.value = null; }, 5000);
+    fetchAppointments();
+    setTimeout(() => { successMessage.value = null; }, 3000);
   } catch (err) {
     console.error(`Error deleting appointment ${appointmentId}:`, err);
      if (err.response && err.response.status === 401) {
@@ -211,7 +290,7 @@ const deleteAppointment = async (appointmentId) => {
 };
 
 const getStatusBadgeClass = (status) => {
-  const base = 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full';
+  const base = 'px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full whitespace-nowrap';
   switch (status?.toLowerCase()) {
     case 'scheduled':
       return `${base} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200`;
@@ -226,9 +305,27 @@ const getStatusBadgeClass = (status) => {
   }
 };
 
+const toggleActionsDropdown = (appointmentId) => {
+  if (activeActionsDropdown.value === appointmentId) {
+    activeActionsDropdown.value = null;
+  } else {
+    activeActionsDropdown.value = appointmentId;
+  }
+};
+
 onMounted(() => {
   fetchAppointments();
+  const handleClickOutside = (event) => {
+    if (activeActionsDropdown.value && !event.target.closest('.relative')) {
+      activeActionsDropdown.value = null;
+    }
+  };
+  document.addEventListener('click', handleClickOutside);
+  return () => {
+    document.removeEventListener('click', handleClickOutside);
+  };
 });
+
 </script>
 
 <style scoped>

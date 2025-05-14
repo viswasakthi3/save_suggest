@@ -2,10 +2,7 @@
   <div class="record-detail-view">
     <!-- 1. Back Button - Moved to give more space -->
     <div class="top-navigation-bar">
-      <button @click="$emit('back-to-list')" class="btn btn-subtle btn-back">
-        <ArrowLeft size="18" />
-        <span>Go Back</span>
-      </button>
+
     </div>
 
     <div class="container">
@@ -22,8 +19,13 @@
         </TransitionFade>
 
         <div class="main-layout">
-          <!-- Left Column Wrapper -->
+          <!-- Left Column Wrappe1212r -->
           <div class="left-column-wrapper">
+
+                  <button @click="$emit('back-to-list')" class="btn btn-subtle btn-back">
+        <ArrowLeft size="18" />
+        <span>Go Back</span>
+      </button>
             <!-- Record Details Card -->
             <div class="card record-details">
               <div class="card-header">
@@ -1270,6 +1272,7 @@ onMounted(() => {
   padding: 1rem var(--container-padding) 0.5rem;
   display: flex;
   align-items: center;
+  /* margin-bottom: -70px; */
 }
 
 .btn-back {
