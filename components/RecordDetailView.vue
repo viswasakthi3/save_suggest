@@ -1,6 +1,6 @@
 <template>
   <div class="record-detail-view">
-    <!-- 1. Back Button -->
+    <!-- 1. Back Button - Moved to give more space -->
     <div class="top-navigation-bar">
       <button @click="$emit('back-to-list')" class="btn btn-subtle btn-back">
         <ArrowLeft size="18" />
@@ -108,7 +108,7 @@
               </div>
             </div>
 
-            <!-- X-Ray Gallery and Upload Section -->
+            <!-- X-Ray Gallery and Upload Section - REORDERED -->
             <div class="card xray-section">
               <div class="card-header">
                 <div class="card-title">
@@ -117,20 +117,55 @@
                 </div>
               </div>
               <div class="card-content">
-                <!-- X-Ray Upload Form -->
+                <!-- REORDERED: X-Ray Thumbnails Display FIRST -->
+                <h4>Existing X-rays</h4>
+                <div v-if="isLoadingXrays" class="loading-state">
+                  <LoaderCircle class="spin" size="24" /> Loading X-rays...
+                </div>
+                <div v-else-if="xrayFetchError" class="alert alert-warning">
+                  <AlertTriangle size="16" class="alert-icon" /> {{ xrayFetchError }}
+                </div>
+                <div v-else-if="filteredXrays.length === 0" class="empty-state-compact">
+                  <Info size="20" /> No X-rays found for tooth #{{ formData.tooth_number }}.
+                </div>
+                <div v-else class="xray-thumbnail-grid">
+                  <div v-for="(xray, index) in filteredXrays" :key="xray.id" class="xray-thumbnail">
+                    <img :src="xray.image_url" :alt="xray.description || 'X-ray image'" loading="lazy" @click="openXrayModal(index)">
+                    <div class="thumbnail-overlay">
+                      <p class="thumbnail-description">{{ xray.description || 'View X-ray' }}</p>
+                      <small>Tooth: {{ xray.tooth_number }}</small>
+                    </div>
+                    <button @click.stop="confirmDeleteXray(xray)" class="btn-delete-thumbnail">
+                      <Trash2 size="14" />
+                    </button>
+                  </div>
+                </div>
+
+                <hr class="section-divider">
+                
+                <!-- X-Ray Upload Form SECOND -->
                 <form @submit.prevent="handleSubmitNewXray" class="xray-upload-form">
                   <h4>Upload New X-ray</h4>
-                  <div class="form-group">
-                    <label for="new_xray_tooth_number" class="form-label">Tooth Number</label>
-                    <input type="number" id="new_xray_tooth_number" v-model.number="newXrayForm.tooth_number" class="form-input" placeholder="Enter tooth number">
-                  </div>
-                  <div class="form-group">
-                    <label for="new_xray_description" class="form-label">Description</label>
-                    <input type="text" id="new_xray_description" v-model="newXrayForm.description" class="form-input" placeholder="X-ray description">
+                  <div class="form-row two-cols">
+                    <div class="form-group">
+                      <label for="new_xray_tooth_number" class="form-label">Tooth Number</label>
+                      <input type="number" id="new_xray_tooth_number" v-model.number="newXrayForm.tooth_number" class="form-input" placeholder="Enter tooth number">
+                    </div>
+                    <div class="form-group">
+                      <label for="new_xray_description" class="form-label">Description</label>
+                      <input type="text" id="new_xray_description" v-model="newXrayForm.description" class="form-input" placeholder="X-ray description">
+                    </div>
                   </div>
                   <div class="form-group">
                     <label for="new_xray_file_input" class="form-label">X-ray File</label>
-                    <input type="file" id="new_xray_file_input" @change="handleNewXrayFileChange" accept="image/png,image/jpeg,image/gif" class="form-input-file">
+                    <div class="file-input-container">
+                      <input type="file" id="new_xray_file_input" @change="handleNewXrayFileChange" accept="image/png,image/jpeg,image/gif" class="file-input-hidden">
+                      <div class="file-input-ui">
+                        <span v-if="!newXrayForm.fileName">Choose a file...</span>
+                        <span v-else>{{ newXrayForm.fileName }}</span>
+                        <button type="button" class="btn btn-secondary btn-sm">Browse</button>
+                      </div>
+                    </div>
                     <small class="form-text">PNG, JPG, GIF. Max 5MB.</small>
                   </div>
                   <div v-if="newXrayForm.filePreview" class="xray-upload-preview">
@@ -148,29 +183,6 @@
                     <span>{{ isUploadingXray ? 'Uploading...' : 'Upload X-ray' }}</span>
                   </button>
                 </form>
-
-                <hr class="section-divider">
-
-                <!-- X-Ray Thumbnails Display -->
-                <h4>Existing X-rays</h4>
-                <div v-if="isLoadingXrays" class="loading-state">
-                  <LoaderCircle class="spin" size="24" /> Loading X-rays...
-                </div>
-                <div v-else-if="xrayFetchError" class="alert alert-warning">
-                  <AlertTriangle size="16" class="alert-icon" /> {{ xrayFetchError }}
-                </div>
-                <div v-else-if="patientXrays.length === 0" class="empty-state-compact">
-                  <Info size="20" /> No X-rays found for this patient.
-                </div>
-                <div v-else class="xray-thumbnail-grid">
-                  <div v-for="(xray, index) in patientXrays" :key="xray.id" class="xray-thumbnail" @click="openXrayModal(index)">
-                    <img :src="xray.image_url" :alt="xray.description || 'X-ray image'" loading="lazy">
-                    <div class="thumbnail-overlay">
-                      <p class="thumbnail-description">{{ xray.description || 'View X-ray' }}</p>
-                      <small>Tooth: {{ xray.tooth_number }}</small>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -281,7 +293,7 @@
                     </div>
                   </TransitionExpand>
 
-                  <TransitionExpand>
+                  <!-- <TransitionExpand>
                     <div v-if="treatment.xray_taken" class="xray-upload">
                       <label class="form-label">X-Ray Image</label>
                       <div class="upload-zone" @dragover.prevent @drop.prevent="handleFileDrop($event, treatmentIndex)">
@@ -318,7 +330,7 @@
                         </TransitionFade>
                       </div>
                     </div>
-                  </TransitionExpand>
+                  </TransitionExpand> -->
 
                   <!-- Treatment Steps Section -->
                   <div class="treatment-steps">
@@ -419,24 +431,61 @@
       </form>
     </div>
 
-    <!-- X-Ray Modal Viewer -->
+    <!-- X-Ray Modal Viewer - Improved with zooming & external controls -->
     <Transition name="modal-fade">
       <div v-if="showXrayModal && currentModalXray" class="xray-modal-overlay" @click.self="closeXrayModal">
         <div class="xray-modal-content">
           <button @click="closeXrayModal" class="modal-close-button" aria-label="Close X-ray viewer">
             <X size="28" />
           </button>
-          <img :src="currentModalXray.image_url" :alt="currentModalXray.description || 'X-ray image'" class="modal-image">
+          
+          <div class="modal-image-container">
+            <img :src="currentModalXray.image_url" 
+                 :alt="currentModalXray.description || 'X-ray image'" 
+                 class="modal-image"
+                 :class="{ 'zoomed': isImageZoomed }"
+                 @click="toggleImageZoom">
+          </div>
+          
           <div class="modal-caption">
             <p>{{ currentModalXray.description }} (Tooth: {{ currentModalXray.tooth_number }})</p>
             <small>Uploaded: {{ getFormattedDate(currentModalXray.created_at) }}</small>
+            <div class="modal-controls">
+              <button @click="toggleImageZoom" class="modal-control-btn zoom-btn" aria-label="Zoom image">
+                <ZoomIn v-if="!isImageZoomed" size="18" />
+                <ZoomOut v-else size="18" />
+                <span>{{ isImageZoomed ? 'Reset Zoom' : 'Zoom' }}</span>
+              </button>
+              <button @click="confirmDeleteXray(currentModalXray)" class="modal-control-btn delete-btn" aria-label="Delete X-ray">
+                <Trash2 size="18" />
+                <span>Delete</span>
+              </button>
+            </div>
           </div>
-          <button v-if="patientXrays.length > 1" @click="prevXrayInModal" class="modal-nav-button prev" aria-label="Previous X-ray">
-            <ChevronLeft size="36" />
-          </button>
-          <button v-if="patientXrays.length > 1" @click="nextXrayInModal" class="modal-nav-button next" aria-label="Next X-ray">
-            <ChevronRight size="36" />
-          </button>
+        </div>
+        
+        <button v-if="filteredXrays.length > 1" @click="prevXrayInModal" class="modal-nav-button prev" aria-label="Previous X-ray">
+          <ChevronLeft size="36" />
+        </button>
+        <button v-if="filteredXrays.length > 1" @click="nextXrayInModal" class="modal-nav-button next" aria-label="Next X-ray">
+          <ChevronRight size="36" />
+        </button>
+      </div>
+    </Transition>
+    
+    <!-- Delete Confirmation Modal -->
+    <Transition name="modal-fade">
+      <div v-if="showDeleteConfirmation" class="confirmation-modal-overlay">
+        <div class="confirmation-modal">
+          <h3>Delete X-ray</h3>
+          <p>Are you sure you want to delete this X-ray? This action cannot be undone.</p>
+          <div class="confirmation-actions">
+            <button @click="cancelDeleteXray" class="btn btn-outline">Cancel</button>
+            <button @click="deleteXray" class="btn btn-danger" :disabled="isDeletingXray">
+              <LoaderCircle v-if="isDeletingXray" class="btn-icon spin" size="14" />
+              <span>{{ isDeletingXray ? 'Deleting...' : 'Delete X-ray' }}</span>
+            </button>
+          </div>
         </div>
       </div>
     </Transition>
@@ -451,7 +500,7 @@ import DatePicker from './DatePicker.vue';
 import {
   X, ClipboardEdit, LoaderCircle, Image, ArrowLeft, FileText,
   ListChecks, PlusCircle, Info, Stethoscope, Trash2, UploadCloud,
-  ListOrdered, Plus, AlertTriangle, MessageSquare,
+  ListOrdered, Plus, AlertTriangle, MessageSquare, ZoomIn, ZoomOut,
   ChevronLeft, ChevronRight, Upload
 } from 'lucide-vue-next';
 
@@ -938,11 +987,19 @@ const xrayFetchError = ref(null);
 const showXrayModal = ref(false);
 const currentXrayModalIndex = ref(0);
 
-// New X-Ray Upload State
+// New state for X-ray management
+const isImageZoomed = ref(false);
+const showDeleteConfirmation = ref(false);
+const xrayToDelete = ref(null);
+const isDeletingXray = ref(false);
+const deleteXrayError = ref(null);
+
+// New X-Ray Upload State - Improved with filename
 const newXrayForm = ref({
   tooth_number: props.initialToothNumberProp || (props.recordDataProp ? props.recordDataProp.tooth_number : ''),
   description: '',
   file: null,
+  fileName: '',
   filePreview: null
 });
 const isUploadingXray = ref(false);
@@ -967,6 +1024,15 @@ const fetchPatientXrays = async () => {
   }
 };
 
+const filteredXrays = computed(() => {
+  if (!formData.value.tooth_number) {
+    return patientXrays.value;
+  }
+  return patientXrays.value.filter(xray => 
+    xray.tooth_number === formData.value.tooth_number
+  );
+});
+
 const openXrayModal = (index) => {
   currentXrayModalIndex.value = index;
   showXrayModal.value = true;
@@ -977,38 +1043,42 @@ const closeXrayModal = () => {
 };
 
 const nextXrayInModal = () => {
-  if (patientXrays.value.length > 0) {
-    currentXrayModalIndex.value = (currentXrayModalIndex.value + 1) % patientXrays.value.length;
+  if (filteredXrays.value.length > 0) {
+    currentXrayModalIndex.value = (currentXrayModalIndex.value + 1) % filteredXrays.value.length;
   }
 };
 
 const prevXrayInModal = () => {
-  if (patientXrays.value.length > 0) {
-    currentXrayModalIndex.value = (currentXrayModalIndex.value - 1 + patientXrays.value.length) % patientXrays.value.length;
+  if (filteredXrays.value.length > 0) {
+    currentXrayModalIndex.value = (currentXrayModalIndex.value - 1 + filteredXrays.value.length) % filteredXrays.value.length;
   }
 };
 
 const currentModalXray = computed(() => {
-  if (patientXrays.value.length === 0 || currentXrayModalIndex.value < 0 || currentXrayModalIndex.value >= patientXrays.value.length) {
+  if (filteredXrays.value.length === 0 || currentXrayModalIndex.value < 0 || currentXrayModalIndex.value >= filteredXrays.value.length) {
     return null;
   }
-  return patientXrays.value[currentXrayModalIndex.value];
+  return filteredXrays.value[currentXrayModalIndex.value];
 });
 
 const handleNewXrayFileChange = (event) => {
   const file = event.target.files[0];
   if (file) {
     newXrayForm.value.file = file;
+    newXrayForm.value.fileName = file.name;
     newXrayForm.value.filePreview = URL.createObjectURL(file);
     xrayUploadError.value = null; // Clear previous error
   } else {
-    newXrayForm.value.file = null;
-    newXrayForm.value.filePreview = null;
+    clearNewXrayFile();
   }
 };
 
 const clearNewXrayFile = () => {
+  if (newXrayForm.value.filePreview) {
+    URL.revokeObjectURL(newXrayForm.value.filePreview);
+  }
   newXrayForm.value.file = null;
+  newXrayForm.value.fileName = '';
   newXrayForm.value.filePreview = null;
   const fileInput = document.getElementById('new_xray_file_input');
   if (fileInput) {
@@ -1058,6 +1128,54 @@ const handleSubmitNewXray = async () => {
     xrayUploadError.value = (err.response && err.response.data && err.response.data.message) || 'X-ray upload failed. Please try again.';
   } finally {
     isUploadingXray.value = false;
+  }
+};
+
+const toggleImageZoom = () => {
+  isImageZoomed.value = !isImageZoomed.value;
+};
+
+const confirmDeleteXray = (xray) => {
+  xrayToDelete.value = xray;
+  showDeleteConfirmation.value = true;
+};
+
+const cancelDeleteXray = () => {
+  xrayToDelete.value = null;
+  showDeleteConfirmation.value = false;
+  deleteXrayError.value = null;
+};
+
+const deleteXray = async () => {
+  if (!xrayToDelete.value || !xrayToDelete.value.id) {
+    cancelDeleteXray();
+    return;
+  }
+
+  isDeletingXray.value = true;
+  deleteXrayError.value = null;
+
+  try {
+    const token = Cookies.get('dental_access_token');
+    await axios.delete(`${config.public.API_BASE_URL}/patients/xrays/${xrayToDelete.value.id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    
+    // Close modal if the current X-ray is being deleted
+    if (showXrayModal.value && currentModalXray.value && currentModalXray.value.id === xrayToDelete.value.id) {
+      closeXrayModal();
+    }
+    
+    // Remove the deleted X-ray from the list
+    patientXrays.value = patientXrays.value.filter(x => x.id !== xrayToDelete.value.id);
+    
+    // Reset the state
+    cancelDeleteXray();
+  } catch (err) {
+    console.error('Error deleting X-ray:', err);
+    deleteXrayError.value = 'Failed to delete X-ray. Please try again.';
+  } finally {
+    isDeletingXray.value = false;
   }
 };
 
@@ -2375,10 +2493,10 @@ onMounted(() => {
 }
 
 .modal-nav-button {
-  position: absolute;
+  position: fixed;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(0,0,0,0.3);
+  background: rgba(0, 0, 0, 0.3);
   color: white;
   border: none;
   border-radius: 50%;
@@ -2389,7 +2507,64 @@ onMounted(() => {
   align-items: center;
   cursor: pointer;
   transition: background-color 0.2s;
-  z-index: 1001;
+  z-index: 1010;
+}
+
+.modal-controls {
+  margin-top: 15px;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.modal-control-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgb(var(--color-border));
+  background: rgb(var(--color-surface));
+  color: rgb(var(--color-text));
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modal-control-btn.zoom-btn:hover {
+  background: rgb(var(--color-primary-light) / 0.2);
+  color: rgb(var(--color-primary-dark));
+  border-color: rgb(var(--color-primary-light));
+}
+
+.modal-control-btn.delete-btn:hover {
+  background: rgb(var(--color-danger) / 0.1);
+  color: rgb(var(--color-danger));
+  border-color: rgb(var(--color-danger) / 0.5);
+}
+
+.modal-image-container {
+  position: relative;
+  overflow: hidden;
+  max-width: 100%;
+  max-height: calc(90vh - 180px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-image {
+  max-width: 100%;
+  max-height: calc(90vh - 180px);
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  transition: transform 0.3s ease;
+  cursor: zoom-in;
+}
+
+.modal-image.zoomed {
+  transform: scale(1.5);
+  cursor: zoom-out;
 }
 
 .modal-nav-button.prev {
@@ -2431,6 +2606,129 @@ onMounted(() => {
   opacity: 0;
 }
 
+/* Confirmation modal */
+.confirmation-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1020;
+}
+
+.confirmation-modal {
+  background: rgb(var(--color-surface));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 24px;
+  width: 90%;
+  max-width: 450px;
+}
+
+.confirmation-modal h3 {
+  margin-top: 0;
+  color: rgb(var(--color-danger));
+}
+
+.confirmation-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.btn-danger {
+  background-color: rgb(var(--color-danger));
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: rgb(var(--color-danger) / 0.8);
+}
+
+/* Responsive adjustments for top navigation */
+.top-navigation-bar {
+  padding-left: 0;
+  margin-left: 0;
+}
+
+/* Improved file input styling */
+.file-input-container {
+  position: relative;
+  width: 100%;
+}
+
+.file-input-hidden {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  top: 0;
+  left: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.file-input-ui {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.625rem 0.875rem;
+  background-color: rgb(var(--color-bg));
+  border: 1px solid rgb(var(--color-border));
+  border-radius: var(--radius-md));
+  min-height: var(--form-control-height);
+  overflow: hidden;
+}
+
+.file-input-ui span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  color: rgb(var(--color-text-muted));
+  margin-right: 10px;
+}
+
+.file-input-container:hover .file-input-ui {
+  border-color: rgb(var(--color-primary));
+}
+
+/* X-ray thumbnail delete button */
+.xray-thumbnail {
+  position: relative;
+}
+
+.btn-delete-thumbnail {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s, background-color 0.2s;
+  color: rgb(var(--color-danger));
+  cursor: pointer;
+}
+
+.xray-thumbnail:hover .btn-delete-thumbnail {
+  opacity: 1;
+}
+
+.btn-delete-thumbnail:hover {
+  background: white;
+}
+
 /* Responsive adjustments for smaller screens */
 @media (max-width: 768px) {
   .main-layout {
@@ -2456,5 +2754,11 @@ onMounted(() => {
     width: 24px;
     height: 24px;
   }
+}
+
+.treatments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem; /* Increased gap between treatments */
 }
 </style>
