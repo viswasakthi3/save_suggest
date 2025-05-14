@@ -22,86 +22,155 @@
         </TransitionFade>
 
         <div class="main-layout">
-          <!-- Left Column: Record Details -->
-          <div class="card record-details">
-            <div class="card-header">
-              <div class="card-title">
-                <FileText size="20" />
-                <h2>Record Details</h2>
-              </div>
-            </div>
-            <div class="card-content">
-              <div class="form-row two-cols">
-                <div class="form-group">
-                  <label for="detail_tooth_number" class="form-label required">Tooth Number</label>
-                  <input type="number"
-                         id="detail_tooth_number"
-                         v-model.number="formData.tooth_number"
-                         required
-                         :disabled="isEditing"
-                         class="form-input"
-                         placeholder="Enter tooth number">
+          <!-- Left Column Wrapper -->
+          <div class="left-column-wrapper">
+            <!-- Record Details Card -->
+            <div class="card record-details">
+              <div class="card-header">
+                <div class="card-title">
+                  <FileText size="20" />
+                  <h2>Record Details</h2>
                 </div>
-                <div class="form-group">
-                  <label for="detail_status" class="form-label required">Record Status</label>
-                  <div class="select-wrapper">
-                    <select id="detail_status"
-                            v-model="formData.status"
-                            required
-                            class="form-select status-select">
-                      <option v-for="status in statusOptions" 
-                              :key="status.value" 
-                              :value="status.value">
-                        {{ status.label }}
-                      </option>
-                    </select>
+              </div>
+              <div class="card-content">
+                <div class="form-row two-cols">
+                  <div class="form-group">
+                    <label for="detail_tooth_number" class="form-label required">Tooth Number</label>
+                    <input type="number"
+                           id="detail_tooth_number"
+                           v-model.number="formData.tooth_number"
+                           required
+                           :disabled="isEditing"
+                           class="form-input"
+                           placeholder="Enter tooth number">
+                  </div>
+                  <div class="form-group">
+                    <label for="detail_status" class="form-label required">Record Status</label>
+                    <div class="select-wrapper">
+                      <select id="detail_status"
+                              v-model="formData.status"
+                              required
+                              class="form-select status-select">
+                        <option v-for="status in statusOptions" 
+                                :key="status.value" 
+                                :value="status.value">
+                          {{ status.label }}
+                        </option>
+                      </select>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label required">Condition</label>
-                <div class="condition-badges">
-                  <button 
-                    v-for="condition in predefinedConditions" 
-                    :key="condition"
-                    @click="selectCondition(condition)"
-                    :class="[
-                      'condition-badge', 
-                      formData.condition === condition ? 'condition-badge-selected' : ''
-                    ]"
-                    type="button">
-                    {{ condition }}
-                  </button>
-                  <button 
-                    @click="selectCondition('other')"
-                    :class="[
-                      'condition-badge', 
-                      formData.condition === 'other' ? 'condition-badge-selected' : '',
-                      'condition-badge-other'
-                    ]"
-                    type="button">
-                    Other
-                  </button>
+                <div class="form-group">
+                  <label class="form-label required">Condition</label>
+                  <div class="condition-badges">
+                    <button 
+                      v-for="condition in predefinedConditions" 
+                      :key="condition"
+                      @click="selectCondition(condition)"
+                      :class="[
+                        'condition-badge', 
+                        formData.condition === condition ? 'condition-badge-selected' : ''
+                      ]"
+                      type="button">
+                      {{ condition }}
+                    </button>
+                    <button 
+                      @click="selectCondition('other')"
+                      :class="[
+                        'condition-badge', 
+                        formData.condition === 'other' ? 'condition-badge-selected' : '',
+                        'condition-badge-other'
+                      ]"
+                      type="button">
+                      Other
+                    </button>
+                  </div>
+                </div>
+                <TransitionExpand>
+                  <div class="form-group" v-if="formData.condition === 'other'">
+                    <label for="detail_other_condition" class="form-label required">Specify Other Condition</label>
+                    <input type="text"
+                           id="detail_other_condition"
+                           v-model="formData.other_condition_text"
+                           required
+                           placeholder="Describe the condition"
+                           class="form-input">
+                  </div>
+                </TransitionExpand>
+                <div class="form-group">
+                  <label for="detail_record_notes" class="form-label">General Notes</label>
+                  <textarea id="detail_record_notes"
+                            v-model="formData.notes"
+                            rows="4"
+                            placeholder="Add any general notes for this dental record..."
+                            class="form-textarea"></textarea>
                 </div>
               </div>
-              <TransitionExpand>
-                <div class="form-group" v-if="formData.condition === 'other'">
-                  <label for="detail_other_condition" class="form-label required">Specify Other Condition</label>
-                  <input type="text"
-                         id="detail_other_condition"
-                         v-model="formData.other_condition_text"
-                         required
-                         placeholder="Describe the condition"
-                         class="form-input">
+            </div>
+
+            <!-- X-Ray Gallery and Upload Section -->
+            <div class="card xray-section">
+              <div class="card-header">
+                <div class="card-title">
+                  <Image size="20" />
+                  <h2>Patient X-rays</h2>
                 </div>
-              </TransitionExpand>
-              <div class="form-group">
-                <label for="detail_record_notes" class="form-label">General Notes</label>
-                <textarea id="detail_record_notes"
-                          v-model="formData.notes"
-                          rows="4"
-                          placeholder="Add any general notes for this dental record..."
-                          class="form-textarea"></textarea>
+              </div>
+              <div class="card-content">
+                <!-- X-Ray Upload Form -->
+                <form @submit.prevent="handleSubmitNewXray" class="xray-upload-form">
+                  <h4>Upload New X-ray</h4>
+                  <div class="form-group">
+                    <label for="new_xray_tooth_number" class="form-label">Tooth Number</label>
+                    <input type="number" id="new_xray_tooth_number" v-model.number="newXrayForm.tooth_number" class="form-input" placeholder="Enter tooth number">
+                  </div>
+                  <div class="form-group">
+                    <label for="new_xray_description" class="form-label">Description</label>
+                    <input type="text" id="new_xray_description" v-model="newXrayForm.description" class="form-input" placeholder="X-ray description">
+                  </div>
+                  <div class="form-group">
+                    <label for="new_xray_file_input" class="form-label">X-ray File</label>
+                    <input type="file" id="new_xray_file_input" @change="handleNewXrayFileChange" accept="image/png,image/jpeg,image/gif" class="form-input-file">
+                    <small class="form-text">PNG, JPG, GIF. Max 5MB.</small>
+                  </div>
+                  <div v-if="newXrayForm.filePreview" class="xray-upload-preview">
+                    <img :src="newXrayForm.filePreview" alt="X-ray preview" class="preview-image">
+                    <button type="button" @click="clearNewXrayFile" class="btn btn-sm btn-danger-subtle btn-clear-preview">
+                      <X size="14" /> Remove
+                    </button>
+                  </div>
+                  <div v-if="xrayUploadError" class="alert alert-error-inline">
+                    <AlertTriangle size="14" class="alert-icon" /> {{ xrayUploadError }}
+                  </div>
+                  <button type="submit" :disabled="isUploadingXray || !newXrayForm.file" class="btn btn-primary btn-with-icon">
+                    <LoaderCircle v-if="isUploadingXray" class="btn-icon spin" />
+                    <Upload v-else class="btn-icon" />
+                    <span>{{ isUploadingXray ? 'Uploading...' : 'Upload X-ray' }}</span>
+                  </button>
+                </form>
+
+                <hr class="section-divider">
+
+                <!-- X-Ray Thumbnails Display -->
+                <h4>Existing X-rays</h4>
+                <div v-if="isLoadingXrays" class="loading-state">
+                  <LoaderCircle class="spin" size="24" /> Loading X-rays...
+                </div>
+                <div v-else-if="xrayFetchError" class="alert alert-warning">
+                  <AlertTriangle size="16" class="alert-icon" /> {{ xrayFetchError }}
+                </div>
+                <div v-else-if="patientXrays.length === 0" class="empty-state-compact">
+                  <Info size="20" /> No X-rays found for this patient.
+                </div>
+                <div v-else class="xray-thumbnail-grid">
+                  <div v-for="(xray, index) in patientXrays" :key="xray.id" class="xray-thumbnail" @click="openXrayModal(index)">
+                    <img :src="xray.image_url" :alt="xray.description || 'X-ray image'" loading="lazy">
+                    <div class="thumbnail-overlay">
+                      <p class="thumbnail-description">{{ xray.description || 'View X-ray' }}</p>
+                      <small>Tooth: {{ xray.tooth_number }}</small>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -349,18 +418,41 @@
         </div>
       </form>
     </div>
+
+    <!-- X-Ray Modal Viewer -->
+    <Transition name="modal-fade">
+      <div v-if="showXrayModal && currentModalXray" class="xray-modal-overlay" @click.self="closeXrayModal">
+        <div class="xray-modal-content">
+          <button @click="closeXrayModal" class="modal-close-button" aria-label="Close X-ray viewer">
+            <X size="28" />
+          </button>
+          <img :src="currentModalXray.image_url" :alt="currentModalXray.description || 'X-ray image'" class="modal-image">
+          <div class="modal-caption">
+            <p>{{ currentModalXray.description }} (Tooth: {{ currentModalXray.tooth_number }})</p>
+            <small>Uploaded: {{ getFormattedDate(currentModalXray.created_at) }}</small>
+          </div>
+          <button v-if="patientXrays.length > 1" @click="prevXrayInModal" class="modal-nav-button prev" aria-label="Previous X-ray">
+            <ChevronLeft size="36" />
+          </button>
+          <button v-if="patientXrays.length > 1" @click="nextXrayInModal" class="modal-nav-button next" aria-label="Next X-ray">
+            <ChevronRight size="36" />
+          </button>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted, h, shallowRef } from 'vue';
+import { ref, watch, onMounted, computed, h, shallowRef } from 'vue';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import DatePicker from './DatePicker.vue';
 import {
   X, ClipboardEdit, LoaderCircle, Image, ArrowLeft, FileText,
   ListChecks, PlusCircle, Info, Stethoscope, Trash2, UploadCloud,
-  ListOrdered, Plus, AlertTriangle, MessageSquare
+  ListOrdered, Plus, AlertTriangle, MessageSquare,
+  ChevronLeft, ChevronRight, Upload
 } from 'lucide-vue-next';
 
 // Create a simple date formatter for consistent date presentation
@@ -838,6 +930,165 @@ const formatDatesBeforeSubmit = () => {
     }
   });
 };
+
+// X-Ray Gallery and Modal State
+const patientXrays = ref([]);
+const isLoadingXrays = ref(false);
+const xrayFetchError = ref(null);
+const showXrayModal = ref(false);
+const currentXrayModalIndex = ref(0);
+
+// New X-Ray Upload State
+const newXrayForm = ref({
+  tooth_number: props.initialToothNumberProp || (props.recordDataProp ? props.recordDataProp.tooth_number : ''),
+  description: '',
+  file: null,
+  filePreview: null
+});
+const isUploadingXray = ref(false);
+const xrayUploadError = ref(null);
+
+const fetchPatientXrays = async () => {
+  if (!props.patientId) return;
+  isLoadingXrays.value = true;
+  xrayFetchError.value = null;
+  try {
+    const token = Cookies.get('dental_access_token');
+    const response = await axios.get(`${config.public.API_BASE_URL}/patients/${props.patientId}/xrays`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    patientXrays.value = response.data.xrays || [];
+  } catch (err) {
+    console.error('Error fetching patient x-rays:', err);
+    xrayFetchError.value = 'Failed to load X-rays. Please try again.';
+    patientXrays.value = []; // Clear xrays on error
+  } finally {
+    isLoadingXrays.value = false;
+  }
+};
+
+const openXrayModal = (index) => {
+  currentXrayModalIndex.value = index;
+  showXrayModal.value = true;
+};
+
+const closeXrayModal = () => {
+  showXrayModal.value = false;
+};
+
+const nextXrayInModal = () => {
+  if (patientXrays.value.length > 0) {
+    currentXrayModalIndex.value = (currentXrayModalIndex.value + 1) % patientXrays.value.length;
+  }
+};
+
+const prevXrayInModal = () => {
+  if (patientXrays.value.length > 0) {
+    currentXrayModalIndex.value = (currentXrayModalIndex.value - 1 + patientXrays.value.length) % patientXrays.value.length;
+  }
+};
+
+const currentModalXray = computed(() => {
+  if (patientXrays.value.length === 0 || currentXrayModalIndex.value < 0 || currentXrayModalIndex.value >= patientXrays.value.length) {
+    return null;
+  }
+  return patientXrays.value[currentXrayModalIndex.value];
+});
+
+const handleNewXrayFileChange = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    newXrayForm.value.file = file;
+    newXrayForm.value.filePreview = URL.createObjectURL(file);
+    xrayUploadError.value = null; // Clear previous error
+  } else {
+    newXrayForm.value.file = null;
+    newXrayForm.value.filePreview = null;
+  }
+};
+
+const clearNewXrayFile = () => {
+  newXrayForm.value.file = null;
+  newXrayForm.value.filePreview = null;
+  const fileInput = document.getElementById('new_xray_file_input');
+  if (fileInput) {
+    fileInput.value = ''; // Reset file input
+  }
+};
+
+const handleSubmitNewXray = async () => {
+  if (!newXrayForm.value.file || !props.patientId) {
+    xrayUploadError.value = 'Please select a file and ensure patient ID is available.';
+    return;
+  }
+  if (!newXrayForm.value.tooth_number) {
+    xrayUploadError.value = 'Tooth number is required.';
+    return;
+  }
+   if (!newXrayForm.value.description) {
+    xrayUploadError.value = 'Description is required.';
+    return;
+  }
+
+  isUploadingXray.value = true;
+  xrayUploadError.value = null;
+
+  const xrayFormData = new FormData();
+  xrayFormData.append('patient_id', props.patientId);
+  xrayFormData.append('tooth_number', newXrayForm.value.tooth_number);
+  xrayFormData.append('description', newXrayForm.value.description);
+  xrayFormData.append('file', newXrayForm.value.file);
+
+  try {
+    const token = Cookies.get('dental_access_token');
+    await axios.post(`https://api.theluvit.com/patients/upload-xray`, xrayFormData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        Authorization: `Bearer ${token}`
+      }
+    });
+    // Success
+    clearNewXrayFile();
+    newXrayForm.value.description = '';
+    // Optionally, keep tooth_number or reset it
+    // newXrayForm.value.tooth_number = props.initialToothNumberProp || (props.recordDataProp ? props.recordDataProp.tooth_number : '');
+    await fetchPatientXrays(); // Refresh the X-ray list
+  } catch (err) {
+    console.error('Error uploading X-ray:', err.response ? err.response.data : err.message);
+    xrayUploadError.value = (err.response && err.response.data && err.response.data.message) || 'X-ray upload failed. Please try again.';
+  } finally {
+    isUploadingXray.value = false;
+  }
+};
+
+watch(() => props.patientId, (newPatientId) => {
+  if (newPatientId) {
+    fetchPatientXrays();
+  } else {
+    patientXrays.value = []; // Clear xrays if patientId is null
+  }
+}, { immediate: true });
+
+watch(() => props.initialToothNumberProp, (newVal) => {
+    if (newVal && (!newXrayForm.value.tooth_number || props.isCreatingNew)) {
+        newXrayForm.value.tooth_number = newVal;
+    }
+}, { immediate: true });
+
+onMounted(() => {
+  if (props.patientId) {
+    fetchPatientXrays();
+  }
+  if (props.initialToothNumberProp && (!formData.value.tooth_number || props.isCreatingNew)) {
+    formData.value.tooth_number = props.initialToothNumberProp;
+  }
+   if (props.initialToothNumberProp && !newXrayForm.value.tooth_number) {
+    newXrayForm.value.tooth_number = props.initialToothNumberProp;
+  }
+  if (props.recordDataProp && props.recordDataProp.tooth_number && !newXrayForm.value.tooth_number) {
+    newXrayForm.value.tooth_number = props.recordDataProp.tooth_number;
+  }
+});
 </script>
 
 <style>
@@ -1896,5 +2147,314 @@ const formatDatesBeforeSubmit = () => {
 
 .date-picker-custom .bg-dark {
   background-color: rgb(var(--color-text));
+}
+
+/* X-Ray Section Styles */
+.main-layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.left-column-wrapper {
+  flex: 1;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.treatments-container {
+  flex: 1.5;
+  min-width: 300px;
+}
+
+.xray-section .card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.xray-upload-form {
+  padding: 15px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: rgb(var(--color-surface-muted));
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.xray-upload-form h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 1.1em;
+  font-weight: 600;
+  color: rgb(var(--color-text));
+}
+
+.form-input-file {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgb(var(--color-text));
+  background-color: rgb(var(--color-bg));
+  border: 1px solid rgb(var(--color-border));
+  border-radius: var(--radius-md);
+  transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+}
+
+.form-input-file:focus {
+  border-color: rgb(var(--color-primary));
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(var(--color-primary-light), 0.25);
+}
+
+.xray-upload-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.xray-upload-preview .preview-image {
+  max-width: 100px;
+  max-height: 100px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgb(var(--color-border));
+  object-fit: cover;
+}
+
+.btn-clear-preview {
+  margin-left: auto;
+}
+
+.alert-error-inline {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  background-color: rgb(var(--color-danger) / 0.1);
+  color: rgb(var(--color-danger));
+  border: 1px solid rgb(var(--color-danger));
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.section-divider {
+  border: none;
+  border-top: 1px solid rgb(var(--color-border));
+  margin: 20px 0;
+}
+
+.xray-thumbnail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 15px;
+}
+
+.xray-thumbnail {
+  position: relative;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+  background-color: rgb(var(--color-surface-muted));
+  border: 1px solid rgb(var(--color-border));
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.xray-thumbnail:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.xray-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumbnail-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
+  color: white;
+  padding: 8px;
+  font-size: 0.8rem;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.xray-thumbnail:hover .thumbnail-overlay {
+  opacity: 1;
+}
+
+.thumbnail-description {
+  font-weight: 500;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.thumbnail-overlay small {
+  font-size: 0.7rem;
+  opacity: 0.9;
+}
+
+.loading-state, .empty-state-compact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 15px;
+  color: rgb(var(--color-text-muted));
+  font-size: 0.9rem;
+  justify-content: center;
+  min-height: 80px;
+}
+
+/* X-Ray Modal Styles */
+.xray-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.xray-modal-content {
+  position: relative;
+  background-color: rgb(var(--color-surface));
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.modal-image {
+  max-width: 100%;
+  max-height: calc(90vh - 120px);
+  object-fit: contain;
+  border-radius: var(--radius-md);
+}
+
+.modal-close-button {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(0,0,0,0.3);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.modal-close-button:hover {
+  background: rgba(0,0,0,0.5);
+}
+
+.modal-nav-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.3);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  z-index: 1001;
+}
+
+.modal-nav-button.prev {
+  left: 15px;
+}
+
+.modal-nav-button.next {
+  right: 15px;
+}
+
+.modal-nav-button:hover {
+  background: rgba(0,0,0,0.5);
+}
+
+.modal-caption {
+  margin-top: 15px;
+  text-align: center;
+  color: rgb(var(--color-text));
+}
+
+.modal-caption p {
+  margin: 0 0 5px 0;
+  font-size: 1rem;
+}
+
+.modal-caption small {
+  font-size: 0.85rem;
+  color: rgb(var(--color-text-muted));
+}
+
+/* Modal Fade Transition */
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+  .main-layout {
+    flex-direction: column;
+  }
+
+  .left-column-wrapper, .treatments-container {
+    flex-basis: auto;
+    width: 100%;
+  }
+
+  .xray-thumbnail-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+  }
+
+  .modal-nav-button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .modal-nav-button svg {
+    width: 24px;
+    height: 24px;
+  }
 }
 </style>
