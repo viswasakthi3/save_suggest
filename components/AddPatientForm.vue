@@ -1,19 +1,27 @@
-\
 <template>
-  <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50" @click.self="$emit('close')">
+  <div
+    class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50"
+    @click.self="confirmClose"
+  >
     <div class="relative mx-auto p-6 border w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800">
       <button
-        @click="$emit('close')"
+        @click="confirmClose"
         class="absolute top-3 right-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
         aria-label="Close"
       >
         <X class="h-6 w-6" />
       </button>
-      <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Add New Patient</h3>
+      <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Add New Patient</h3>
 
-      <div v-if="error" class="mb-4 p-3 bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-md text-red-700 dark:text-red-300 text-sm flex items-center justify-between">
+      <div
+        v-if="error"
+        class="mb-4 p-3 bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-md text-red-700 dark:text-red-300 text-sm flex items-center justify-between"
+      >
         <span>{{ error }}</span>
-        <button @click="error = null" class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-200">
+        <button
+          @click="error = null"
+          class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-200"
+        >
           <X class="w-4 h-4" />
         </button>
       </div>
@@ -54,20 +62,58 @@
             <label for="address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address</label>
             <textarea v-model="formData.address" id="address" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"></textarea>
           </div>
+     
           <div>
-            <label for="insurance_provider" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Insurance Provider</label>
-            <input v-model="formData.insurance_provider" type="text" id="insurance_provider" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
+            <label for="blood_group" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Blood Group</label>
+            <input
+              v-model="formData.blood_group"
+              type="text"
+              id="blood_group"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            />
           </div>
           <div>
-            <label for="insurance_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Insurance ID</label>
-            <input v-model="formData.insurance_id" type="text" id="insurance_id" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
+            <label for="current_medications" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Current Medications</label>
+            <textarea
+              v-model="formData.current_medications"
+              id="current_medications"
+              rows="2"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            ></textarea>
+          </div>
+          <div>
+            <label for="dental_concerns" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dental Concerns</label>
+            <textarea
+              v-model="formData.dental_concerns"
+              id="dental_concerns"
+              rows="2"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            ></textarea>
+          </div>
+          <div>
+            <label for="emergency_contact" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Emergency Contact</label>
+            <input
+              v-model="formData.emergency_contact"
+              type="text"
+              id="emergency_contact"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+          <div>
+            <label for="occupation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Occupation</label>
+            <input
+              v-model="formData.occupation"
+              type="text"
+              id="occupation"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            />
           </div>
         </div>
 
         <div class="flex justify-end gap-3 mt-6">
           <button
             type="button"
-            @click="$emit('close')"
+            @click="confirmClose"
             class="py-2 px-4 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 font-medium rounded-md"
             :disabled="submitting"
           >
@@ -108,11 +154,26 @@ const formData = ref({
   phone: '',
   address: '',
   insurance_provider: '',
-  insurance_id: ''
+  insurance_id: '',
+  blood_group: '',
+  current_medications: '',
+  dental_concerns: '',
+  emergency_contact: '',
+  occupation: ''
 });
 
 const getAccessTokenCookie = () => {
   return Cookies.get('dental_access_token');
+};
+
+const confirmClose = () => {
+  if (Object.values(formData.value).some((field) => field)) {
+    if (confirm('Are you sure you want to close? Unsaved changes will be lost.')) {
+      emit('close');
+    }
+  } else {
+    emit('close');
+  }
 };
 
 const submitForm = async () => {
@@ -123,15 +184,14 @@ const submitForm = async () => {
   if (!token) {
     error.value = 'Authentication token not found. Please log in again.';
     submitting.value = false;
-    emit('error', 'Authentication token not found.'); // Optionally emit error upwards
+    emit('error', 'Authentication token not found.');
     return;
   }
 
-  // Basic validation (required fields are handled by `required` attribute)
   if (!formData.value.first_name || !formData.value.last_name || !formData.value.date_of_birth) {
-      error.value = 'Please fill in all required fields (First Name, Last Name, Date of Birth).';
-      submitting.value = false;
-      return;
+    error.value = 'Please fill in all required fields (First Name, Last Name, Date of Birth).';
+    submitting.value = false;
+    return;
   }
 
   try {
@@ -144,21 +204,21 @@ const submitForm = async () => {
 
     if (response.status === 201) {
       emit('patient-added', response.data.patient_id);
-      emit('close'); // Close the form on success
+      emit('close');
     } else {
       throw new Error(response.data.error || 'Failed to create patient');
     }
   } catch (err) {
     console.error('Error creating patient:', err);
     if (err.response && err.response.data && err.response.data.error) {
-        error.value = `Failed to add patient: ${err.response.data.error}`;
+      error.value = `Failed to add patient: ${err.response.data.error}`;
     } else if (err.response && err.response.status === 401) {
-        error.value = 'Session expired. Please log in again.';
-        emit('error', 'Session expired.'); // Notify parent about auth error
+      error.value = 'Session expired. Please log in again.';
+      emit('error', 'Session expired.');
     } else {
-        error.value = `Failed to add patient: ${err.message || 'Network error or unexpected issue'}`;
+      error.value = `Failed to add patient: ${err.message || 'Network error or unexpected issue'}`;
     }
-    emit('error', error.value); // Emit detailed error
+    emit('error', error.value);
   } finally {
     submitting.value = false;
   }
@@ -166,14 +226,13 @@ const submitForm = async () => {
 </script>
 
 <style scoped>
-/* Add specific styles if needed, e.g., for date picker appearance */
 input[type="date"]::-webkit-calendar-picker-indicator {
-    cursor: pointer;
-    filter: invert(0.6) brightness(1); /* Basic styling for dark mode */
+  cursor: pointer;
+  filter: invert(0.6) brightness(1);
 }
 @media (prefers-color-scheme: dark) {
-    input[type="date"]::-webkit-calendar-picker-indicator {
-        filter: invert(0.8) brightness(1);
-    }
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.8) brightness(1);
+  }
 }
 </style>

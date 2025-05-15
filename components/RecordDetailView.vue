@@ -19,7 +19,7 @@
         </TransitionFade>
 
         <div class="main-layout">
-          <!-- Left Column Wrappe1212r -->
+          <!-- Left Column Wrapper -->
           <div class="left-column-wrapper">
 
                   <button @click="$emit('back-to-list')" class="btn btn-subtle btn-back">
@@ -295,45 +295,6 @@
                     </div>
                   </TransitionExpand>
 
-                  <!-- <TransitionExpand>
-                    <div v-if="treatment.xray_taken" class="xray-upload">
-                      <label class="form-label">X-Ray Image</label>
-                      <div class="upload-zone" @dragover.prevent @drop.prevent="handleFileDrop($event, treatmentIndex)">
-                        <input :id="`detail_xray_image_input_${treatmentIndex}`"
-                               type="file"
-                               @change="handleFileUpload($event, treatmentIndex)"
-                               accept="image/png,image/jpeg,image/gif"
-                               class="file-input">
-                        <div class="upload-content">
-                          <div class="upload-icon">
-                            <UploadCloud size="32" />
-                          </div>
-                          <div class="upload-text">
-                            <strong>Drag & drop image here</strong>
-                            <span>or <label :for="`detail_xray_image_input_${treatmentIndex}`" class="upload-browse">browse files</label></span>
-                            <small>PNG, JPG, GIF up to 5MB</small>
-                          </div>
-                        </div>
-                        <TransitionFade>
-                          <div v-if="treatment.xray_image_name || treatment.xray_image_url" class="upload-file-info">
-                            <div class="file-info">
-                              <Image size="16" />
-                              <span v-if="treatment.xray_image_name" class="file-name">
-                                New: {{ treatment.xray_image_name }}
-                              </span>
-                              <span v-else-if="treatment.xray_image_url" class="file-name">
-                                Current: {{ treatment.xray_image_url.substring(treatment.xray_image_url.lastIndexOf('/') + 1) }}
-                              </span>
-                            </div>
-                            <button @click="clearXrayImage(treatmentIndex)" type="button" class="btn-clear-file" aria-label="Remove file">
-                              <X size="14" />
-                            </button>
-                          </div>
-                        </TransitionFade>
-                      </div>
-                    </div>
-                  </TransitionExpand> -->
-
                   <!-- Treatment Steps Section -->
                   <div class="treatment-steps">
                     <div class="steps-header">
@@ -413,6 +374,15 @@
                 </div>
               </div>
             </TransitionGroup>
+
+            <!-- Patient Appointments Section -->
+            <!-- <PatientAppointmentsView v-if="formData.patient_id" :patient-id="formData.patient_id" class="mt-8" />
+            <div v-else class="mt-8 text-gray-500 dark:text-gray-400">
+              <p>Patient ID not available to load appointments.</p>
+            </div> -->
+ 
+
+            
           </div>
         </div>
 
@@ -431,6 +401,9 @@
           </button>
         </div>
       </form>
+
+
+      <PatientAppointmentsView v-if="formData && formData.patient_id" :patient-id="formData.patient_id" class="mt-8" />
     </div>
 
     <!-- X-Ray Modal Viewer - Improved with zooming & external controls -->
@@ -505,6 +478,7 @@ import {
   ListOrdered, Plus, AlertTriangle, MessageSquare, ZoomIn, ZoomOut,
   ChevronLeft, ChevronRight, Upload
 } from 'lucide-vue-next';
+import PatientAppointmentsView from '~/components/PatientAppointmentsView.vue'; // Import the new component
 
 // Create a simple date formatter for consistent date presentation
 const getFormattedDate = (date) => {
@@ -608,7 +582,10 @@ const initialFormData = () => ({
   treatments: [defaultTreatment()]
 });
 
-const formData = ref(initialFormData());
+const formData = ref({
+  ...initialFormData(),
+  patient_id: props.patientId || null // Initialize with prop
+});
 
 // For Treatment Notes Toggle
 const treatmentNotesVisibility = ref([]);
@@ -762,6 +739,7 @@ watch(() => props.recordDataProp, (newVal) => {
     formData.value = {
       ...initialFormData(),
       tooth_number: props.initialToothNumberProp || (formData.value.tooth_number || null), // Ensure tooth_number is set if available
+      patient_id: props.patientId || null // Ensure patient_id is set if available
     };
     if (!formData.value.treatments || formData.value.treatments.length === 0) {
         formData.value.treatments = [defaultTreatment()];
@@ -774,6 +752,12 @@ watch(() => props.recordDataProp, (newVal) => {
 watch(() => props.initialToothNumberProp, (newVal) => {
   if (!isEditing.value && newVal && formData.value.tooth_number !== newVal) {
     formData.value.tooth_number = newVal;
+  }
+}, { immediate: true });
+
+watch(() => props.patientId, (newPatientId) => {
+  if (newPatientId && formData.value.patient_id !== newPatientId) {
+    formData.value.patient_id = newPatientId;
   }
 }, { immediate: true });
 
