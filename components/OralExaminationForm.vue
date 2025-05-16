@@ -1,197 +1,3 @@
-<template>
-  <UModal v-model="isOpen" :prevent-close="isSubmitting" :ui="{ width: 'sm:max-w-5xl', overlay: { background: 'bg-gray-200/75 dark:bg-gray-800/75 backdrop-blur-sm' } }">
-    <UCard :ui="{ ring: '', divide: 'divide-y divide-gray-100 dark:divide-gray-800', header: { padding: 'px-6 py-4' }, body: { padding: 'p-6' }, footer: { padding: 'px-6 py-4' } }">
-      <template #header>
-        <div class="flex items-center justify-between">
-          <h3 class="text-xl font-semibold leading-7 text-gray-900 dark:text-white">
-            New Oral Examination
-          </h3>
-          <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark-20-solid" class="-my-1" @click="handleClose" />
-        </div>
-      </template>
-
-      <UForm :state="formData" @submit.prevent="handleSave" class="space-y-6">
-        <UFormGroup label="Examination Date" name="exam_date" required class="mb-6 max-w-xs">
-          <UInput v-model="formData.exam_date" type="date" size="md" />
-        </UFormGroup>
-
-        <div class="space-y-8">
-          <!-- Row 1: Calculus/Stains & Missing Teeth -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <UCard :ui="{ header: { padding: 'px-4 py-3 sm:px-5' }, body: { padding: 'p-4 sm:p-5' }, shadow: 'shadow-md', ring: 'ring-1 ring-gray-200 dark:ring-gray-700' }">
-              <template #header>
-                <h4 class="text-base font-semibold text-gray-800 dark:text-gray-200">Calculus & Stains</h4>
-              </template>
-              <div class="space-y-4">
-                <div v-for="(item, index) in formData.calculus_stains" :key="index" class="flex items-end space-x-3">
-                  <UFormGroup label="Tooth" class="flex-1 min-w-0">
-                    <UInput v-model="item.tooth" placeholder="e.g., 17" size="sm" />
-                  </UFormGroup>
-                  <UFormGroup label="Level" class="flex-1">
-                    <USelectMenu v-model="item.level" :options="calculusLevels" value-attribute="key" option-attribute="label" placeholder="Select Level" size="sm" />
-                  </UFormGroup>
-                  <UButton color="red" variant="soft" icon="i-heroicons-trash-16-solid" size="sm" @click="removeCalculusStain(index)" class="mb-1" />
-                </div>
-                <UButton type="button" icon="i-heroicons-plus-circle-16-solid" @click="addCalculusStain" variant="outline" size="sm" label="Add Tooth Entry" />
-              </div>
-            </UCard>
-
-            <UCard :ui="{ header: { padding: 'px-4 py-3 sm:px-5' }, body: { padding: 'p-4 sm:p-5' }, shadow: 'shadow-md', ring: 'ring-1 ring-gray-200 dark:ring-gray-700' }">
-              <template #header>
-                <h4 class="text-base font-semibold text-gray-800 dark:text-gray-200">Missing Teeth</h4>
-              </template>
-              <div class="space-y-3">
-                <div class="flex items-center space-x-2">
-                  <UInput v-model="newMissingTooth" placeholder="Enter tooth number" @keyup.enter="addMissingTooth" size="sm" class="flex-1"/>
-                  <UButton type="button" @click="addMissingTooth" variant="outline" size="sm" label="Add Missing" />
-                </div>
-                <div v-if="formData.missing_teeth.length" class="flex flex-wrap gap-2 pt-1">
-                  <UBadge v-for="(tooth, index) in formData.missing_teeth" :key="index" color="gray" variant="solid" size="sm">
-                    {{ tooth }}
-                    <UButton color="gray" variant="link" icon="i-heroicons-x-mark-16-solid" size="2xs" @click="removeMissingTooth(index)" class="-mr-1.5 ml-0.5 p-0"/>
-                  </UBadge>
-                </div>
-                <p v-else class="text-sm text-gray-500 dark:text-gray-400">No missing teeth recorded.</p>
-              </div>
-            </UCard>
-          </div>
-
-          <!-- Row 2: Pocket Depths & Mobility Scores (Full Width Card with Internal Grid) -->
-          <UCard :ui="{ header: { padding: 'px-4 py-3 sm:px-5' }, body: { padding: 'p-4 sm:p-5' }, shadow: 'shadow-md', ring: 'ring-1 ring-gray-200 dark:ring-gray-700' }">
-            <template #header>
-               <h4 class="text-base font-semibold text-gray-800 dark:text-gray-200">Periodontal Charting</h4>
-            </template>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-8">
-              <div>
-                <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pocket Depths (mm)</h5>
-                <div class="grid grid-cols-4 gap-x-2 gap-y-3">
-                  <template v-for="quadrant in pocketDepthQuadrants" :key="quadrant.name + '-depths'">
-                    <div v-for="tooth in quadrant.teeth" :key="tooth + '-depth'" class="flex-shrink-0">
-                      <UFormGroup :label="`T${tooth}`" :name="`pocket_depths.${tooth}`" size="sm">
-                        <UInput v-model="formData.pocket_depths[tooth]" type="number" min="0" max="20" placeholder="-" size="xs" />
-                      </UFormGroup>
-                    </div>
-                  </template>
-                </div>
-              </div>
-              <div>
-                <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mobility Scores (0-3)</h5>
-                <div class="grid grid-cols-4 gap-x-2 gap-y-3">
-                  <template v-for="quadrant in mobilityScoreQuadrants" :key="quadrant.name + '-mobility'">
-                    <div v-for="tooth in quadrant.teeth" :key="tooth + '-mobility'" class="flex-shrink-0">
-                      <UFormGroup :label="`T${tooth}`" :name="`mobility_scores.${tooth}`" size="sm">
-                        <UInput v-model="formData.mobility_scores[tooth]" type="number" min="0" max="3" placeholder="-" size="xs" />
-                      </UFormGroup>
-                    </div>
-                  </template>
-                </div>
-              </div>
-            </div>
-          </UCard>
-
-          <!-- Row 3: Malocclusion (Full Width Card) -->
-          <UCard :ui="{ header: { padding: 'px-4 py-3 sm:px-5' }, body: { padding: 'p-4 sm:p-5' }, shadow: 'shadow-md', ring: 'ring-1 ring-gray-200 dark:ring-gray-700' }">
-            <template #header>
-                <h4 class="text-base font-semibold text-gray-800 dark:text-gray-200">Malocclusion Assessment</h4>
-            </template>
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-3">
-              <UCheckbox v-model="formData.malocclusion.class_i" label="Class I" size="sm"/>
-              <div>
-                <UCheckbox v-model="formData.malocclusion.class_ii" label="Class II" size="sm"/>
-                <div v-if="formData.malocclusion.class_ii" class="ml-6 mt-1.5 space-y-1.5">
-                  <UCheckbox v-model="formData.malocclusion.division_1" label="Division 1" size="xs"/>
-                  <UCheckbox v-model="formData.malocclusion.division_2" label="Division 2" size="xs"/>
-                </div>
-              </div>
-              <UCheckbox v-model="formData.malocclusion.class_iii" label="Class III" size="sm"/>
-              <UCheckbox v-model="formData.malocclusion.anterior_open_bite" label="Anterior Open Bite" size="sm"/>
-              <UCheckbox v-model="formData.malocclusion.posterior_open_bite" label="Posterior Open Bite" size="sm"/>
-              <UCheckbox v-model="formData.malocclusion.anterior_cross_bite" label="Anterior Cross Bite" size="sm"/>
-              <UCheckbox v-model="formData.malocclusion.posterior_cross_bite" label="Posterior Cross Bite" size="sm"/>
-              <UCheckbox v-model="formData.malocclusion.single_tooth_cross_bite" label="Single Tooth Cross Bite" size="sm"/>
-              <UCheckbox v-model="formData.malocclusion.crowding" label="Crowding" size="sm"/>
-              <UCheckbox v-model="formData.malocclusion.spacing" label="Spacing" size="sm"/>
-              <UCheckbox v-model="formData.malocclusion.deep_bite" label="Deep Bite" size="sm"/>
-              <UCheckbox v-model="formData.malocclusion.protrusion" label="Protrusion" size="sm"/>
-              <UCheckbox v-model="formData.malocclusion.midline_diastema" label="Midline Diastema" size="sm"/>
-            </div>
-          </UCard>
-          
-          <!-- Row 4: Impaction & Caries -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <UCard :ui="{ header: { padding: 'px-4 py-3 sm:px-5' }, body: { padding: 'p-4 sm:p-5' }, shadow: 'shadow-md', ring: 'ring-1 ring-gray-200 dark:ring-gray-700' }">
-              <template #header>
-                <h4 class="text-base font-semibold text-gray-800 dark:text-gray-200">Impaction / Root Stumps (RS)</h4>
-              </template>
-              <div class="space-y-4">
-                <div v-for="(item, index) in formData.impaction_info" :key="index" class="space-y-3 border-b border-gray-200 dark:border-gray-700 pb-3 last:border-b-0 last:pb-0">
-                  <div class="flex items-end space-x-3">
-                    <UFormGroup label="Tooth" class="flex-1 min-w-0">
-                      <UInput v-model="item.tooth" placeholder="e.g., 48" size="sm"/>
-                    </UFormGroup>
-                    <UFormGroup label="Type/Condition" class="flex-1 min-w-0">
-                      <UInput v-model="item.type" placeholder="e.g., Mesioangular, RS" size="sm"/>
-                    </UFormGroup>
-                    <UButton color="red" variant="soft" icon="i-heroicons-trash-16-solid" size="sm" @click="removeImpactionInfo(index)" class="mb-1"/>
-                  </div>
-                  <UFormGroup label="Description/Notes">
-                    <UTextarea v-model="item.description" placeholder="Detailed notes..." :rows="2" size="sm"/>
-                  </UFormGroup>
-                </div>
-                <UButton type="button" icon="i-heroicons-plus-circle-16-solid" @click="addImpactionInfo" variant="outline" size="sm" label="Add Impaction/RS Entry" />
-              </div>
-            </UCard>
-            
-            <UCard :ui="{ header: { padding: 'px-4 py-3 sm:px-5' }, body: { padding: 'p-4 sm:p-5' }, shadow: 'shadow-md', ring: 'ring-1 ring-gray-200 dark:ring-gray-700' }">
-              <template #header>
-                <h4 class="text-base font-semibold text-gray-800 dark:text-gray-200">Dental Caries</h4>
-              </template>
-              <div class="space-y-4">
-                <div v-for="(caries, index) in formData.caries_chart" :key="index" class="space-y-3 border-b border-gray-200 dark:border-gray-700 pb-3 last:border-b-0 last:pb-0">
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-3 items-start">
-                    <UFormGroup label="Tooth" class="sm:col-span-1">
-                      <UInput v-model="caries.tooth" placeholder="e.g., 26" size="sm"/>
-                    </UFormGroup>
-                    <UFormGroup label="Surfaces (e.g. O, M, D)" class="sm:col-span-1">
-                      <UInput v-model="caries.surfaces_str" placeholder="O, MO, MOD" size="sm"/>
-                    </UFormGroup>
-                  </div>
-                  <UFormGroup label="Notes" class="mt-1">
-                    <UTextarea v-model="caries.notes" placeholder="Cavity, Discoloration..." :rows="2" size="sm"/>
-                  </UFormGroup>
-                  <div class="flex justify-end pt-1">
-                    <UButton color="red" variant="soft" icon="i-heroicons-trash-16-solid" size="sm" @click="removeCariesEntry(index)" />
-                  </div>
-                </div>
-                <UButton type="button" icon="i-heroicons-plus-circle-16-solid" @click="addCariesEntry" variant="outline" size="sm" label="Add Caries Entry" />
-              </div>
-            </UCard>
-          </div>
-
-          <!-- Row 5: Extra Oral Findings (Full Width Card) -->
-          <UCard :ui="{ header: { padding: 'px-4 py-3 sm:px-5' }, body: { padding: 'p-4 sm:p-5' }, shadow: 'shadow-md', ring: 'ring-1 ring-gray-200 dark:ring-gray-700' }">
-            <template #header>
-                <h4 class="text-base font-semibold text-gray-800 dark:text-gray-200">Extra Oral Findings</h4>
-            </template>
-            <UTextarea v-model="formData.extra_oral_findings" placeholder="Note any findings from extra oral examination (e.g., swelling, TMJ issues, lesions)..." :rows="4" size="sm"/>
-          </UCard>
-        </div>
-
-        <div v-if="formError" class="mt-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-md">
-          <p class="text-sm text-red-700 dark:text-red-300">{{ formError }}</p>
-        </div>
-      </UForm>
-      
-      <template #footer>
-        <div class="flex justify-end space-x-3">
-          <UButton type="button" color="gray" variant="ghost" @click="handleClose" :disabled="isSubmitting" size="md">Cancel</UButton>
-          <UButton type="button" @click="handleSave" label="Save Examination" :loading="isSubmitting" size="md" />
-        </div>
-      </template>
-    </UCard>
-  </UModal>
-</template>
-
 <script setup>
 import { ref, computed, watch, reactive } from 'vue';
 
@@ -404,16 +210,523 @@ const handleClose = () => {
 };
 </script>
 
-<style scoped>
-:deep(.u-form-group label > div) {
-  @apply text-sm font-medium text-gray-700 dark:text-gray-300;
-}
+<template>
+  <div
+    v-if="isOpen"
+    class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50"
+    @click.self="handleClose"
+  >
+    <div class="relative mx-auto p-6 border w-full max-w-5xl shadow-lg rounded-md bg-white dark:bg-gray-800">
+      <button
+        @click="handleClose"
+        class="absolute top-3 right-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+        aria-label="Close"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Oral Examination Form</h3>
 
-:deep(.grid .u-form-group label > div) {
-    margin-bottom: 0.125rem; 
-}
-:deep(.grid .u-form-group input) {
-    padding-top: 0.375rem;    
-    padding-bottom: 0.375rem;
-}
-</style>
+      <div v-if="formError" class="mb-4 p-3 bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-md text-red-700 dark:text-red-300 text-sm flex items-center justify-between">
+        <span>{{ formError }}</span>
+        <button @click="formError = null" class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-200">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <form @submit.prevent="handleSave" class="space-y-6 overflow-y-auto max-h-[calc(100vh-200px)]">
+        <!-- Examination Date -->
+        <div class="mb-4">
+          <label for="exam_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Examination Date <span class="text-red-500">*</span>
+          </label>
+          <input 
+            v-model="formData.exam_date" 
+            type="date" 
+            id="exam_date" 
+            required 
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+          >
+        </div>
+
+        <!-- Calculus & Stains Section -->
+        <fieldset class="border border-gray-300 dark:border-gray-600 p-4 rounded-md mb-6">
+          <legend class="text-lg font-medium text-gray-800 dark:text-gray-200 px-2">Calculus & Stains</legend>
+          
+          <div v-for="(item, index) in formData.calculus_stains" :key="index" class="flex items-end gap-4 mb-2">
+            <div class="flex-1">
+              <label :for="`tooth-calculus-${index}`" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Tooth Number
+              </label>
+              <input 
+                v-model="item.tooth" 
+                :id="`tooth-calculus-${index}`" 
+                type="text" 
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                placeholder="e.g. 11"
+              >
+            </div>
+            <div class="flex-1">
+              <label :for="`level-calculus-${index}`" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Level
+              </label>
+              <select 
+                v-model="item.level" 
+                :id="`level-calculus-${index}`" 
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">Select Level</option>
+                <option v-for="level in calculusLevels" :key="level.key" :value="level.key">
+                  {{ level.label }}
+                </option>
+              </select>
+            </div>
+            <button 
+              type="button" 
+              @click="removeCalculusStain(index)" 
+              class="px-2 py-2 bg-red-100 text-red-600 rounded hover:bg-red-200 dark:bg-red-900 dark:text-red-300 dark:hover:bg-red-800"
+            >
+              Remove
+            </button>
+          </div>
+          
+          <button 
+            type="button" 
+            @click="addCalculusStain" 
+            class="mt-2 px-3 py-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800 flex items-center"
+          >
+            <span class="mr-1">+</span> Add Calculus/Stain
+          </button>
+        </fieldset>
+
+        <!-- Periodontal Charting -->
+        <fieldset class="border border-gray-300 dark:border-gray-600 p-4 rounded-md mb-6">
+          <legend class="text-lg font-medium text-gray-800 dark:text-gray-200 px-2">Periodontal Charting</legend>
+          
+          <!-- Pocket Depths -->
+          <div class="mb-4">
+            <h4 class="text-md font-medium text-gray-700 dark:text-gray-300 mb-2">Pocket Depths (mm)</h4>
+            
+            <div v-for="(quadrant, qIndex) in pocketDepthQuadrants" :key="`pd-quadrant-${qIndex}`" class="mb-4">
+              <h5 class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{{ quadrant.name }}</h5>
+              <div class="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                <div v-for="tooth in quadrant.teeth" :key="`pd-tooth-${tooth}`" class="text-center">
+                  <label :for="`pd-${tooth}`" class="block text-xs font-medium text-gray-600 dark:text-gray-400">
+                    {{ tooth }}
+                  </label>
+                  <input 
+                    v-model="formData.pocket_depths[tooth]" 
+                    :id="`pd-${tooth}`" 
+                    type="number" 
+                    min="0" 
+                    max="15" 
+                    step="1" 
+                    class="w-full px-2 py-1 text-center border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                    placeholder="–"
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Mobility Scores -->
+          <div>
+            <h4 class="text-md font-medium text-gray-700 dark:text-gray-300 mb-2">Mobility Scores (0-3)</h4>
+            
+            <div v-for="(quadrant, qIndex) in mobilityScoreQuadrants" :key="`ms-quadrant-${qIndex}`" class="mb-4">
+              <h5 class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{{ quadrant.name }}</h5>
+              <div class="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                <div v-for="tooth in quadrant.teeth" :key="`ms-tooth-${tooth}`" class="text-center">
+                  <label :for="`ms-${tooth}`" class="block text-xs font-medium text-gray-600 dark:text-gray-400">
+                    {{ tooth }}
+                  </label>
+                  <input 
+                    v-model="formData.mobility_scores[tooth]" 
+                    :id="`ms-${tooth}`" 
+                    type="number" 
+                    min="0" 
+                    max="3" 
+                    step="1" 
+                    class="w-full px-2 py-1 text-center border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                    placeholder="–"
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Malocclusion -->
+        <fieldset class="border border-gray-300 dark:border-gray-600 p-4 rounded-md mb-6">
+          <legend class="text-lg font-medium text-gray-800 dark:text-gray-200 px-2">Malocclusion</legend>
+          
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div class="flex items-center">
+              <input 
+                v-model="formData.malocclusion.class_i" 
+                id="class_i" 
+                type="checkbox" 
+                class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+              >
+              <label for="class_i" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Class I</label>
+            </div>
+            
+            <div class="flex items-center">
+              <input 
+                v-model="formData.malocclusion.class_ii" 
+                id="class_ii" 
+                type="checkbox" 
+                class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+              >
+              <label for="class_ii" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Class II</label>
+            </div>
+            
+            <div class="flex items-center">
+              <input 
+                v-model="formData.malocclusion.division_1" 
+                id="division_1" 
+                type="checkbox" 
+                class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+              >
+              <label for="division_1" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Division 1</label>
+            </div>
+            
+            <div class="flex items-center">
+              <input 
+                v-model="formData.malocclusion.division_2" 
+                id="division_2" 
+                type="checkbox" 
+                class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+              >
+              <label for="division_2" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Division 2</label>
+            </div>
+            
+            <div class="flex items-center">
+              <input 
+                v-model="formData.malocclusion.class_iii" 
+                id="class_iii" 
+                type="checkbox" 
+                class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+              >
+              <label for="class_iii" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Class III</label>
+            </div>
+            
+            <div class="flex items-center">
+              <input 
+                v-model="formData.malocclusion.anterior_open_bite" 
+                id="anterior_open_bite" 
+                type="checkbox" 
+                class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+              >
+              <label for="anterior_open_bite" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Anterior Open Bite</label>
+            </div>
+            
+            <div class="flex items-center">
+              <input 
+                v-model="formData.malocclusion.posterior_open_bite" 
+                id="posterior_open_bite" 
+                type="checkbox" 
+                class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+              >
+              <label for="posterior_open_bite" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Posterior Open Bite</label>
+            </div>
+            
+            <div class="flex items-center">
+              <input 
+                v-model="formData.malocclusion.anterior_cross_bite" 
+                id="anterior_cross_bite" 
+                type="checkbox" 
+                class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+              >
+              <label for="anterior_cross_bite" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Anterior Cross Bite</label>
+            </div>
+            
+            <div class="flex items-center">
+              <input 
+                v-model="formData.malocclusion.posterior_cross_bite" 
+                id="posterior_cross_bite" 
+                type="checkbox" 
+                class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+              >
+              <label for="posterior_cross_bite" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Posterior Cross Bite</label>
+            </div>
+            
+            <div class="flex items-center">
+              <input 
+                v-model="formData.malocclusion.single_tooth_cross_bite" 
+                id="single_tooth_cross_bite" 
+                type="checkbox" 
+                class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+              >
+              <label for="single_tooth_cross_bite" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Single Tooth Cross Bite</label>
+            </div>
+            
+            <div class="flex items-center">
+              <input 
+                v-model="formData.malocclusion.crowding" 
+                id="crowding" 
+                type="checkbox" 
+                class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+              >
+              <label for="crowding" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Crowding</label>
+            </div>
+            
+            <div class="flex items-center">
+              <input 
+                v-model="formData.malocclusion.spacing" 
+                id="spacing" 
+                type="checkbox" 
+                class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+              >
+              <label for="spacing" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Spacing</label>
+            </div>
+            
+            <div class="flex items-center">
+              <input 
+                v-model="formData.malocclusion.deep_bite" 
+                id="deep_bite" 
+                type="checkbox" 
+                class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+              >
+              <label for="deep_bite" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Deep Bite</label>
+            </div>
+            
+            <div class="flex items-center">
+              <input 
+                v-model="formData.malocclusion.protrusion" 
+                id="protrusion" 
+                type="checkbox" 
+                class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+              >
+              <label for="protrusion" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Protrusion</label>
+            </div>
+            
+            <div class="flex items-center">
+              <input 
+                v-model="formData.malocclusion.midline_diastema" 
+                id="midline_diastema" 
+                type="checkbox" 
+                class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+              >
+              <label for="midline_diastema" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Midline Diastema</label>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Missing Teeth -->
+        <fieldset class="border border-gray-300 dark:border-gray-600 p-4 rounded-md mb-6">
+          <legend class="text-lg font-medium text-gray-800 dark:text-gray-200 px-2">Missing Teeth</legend>
+          
+          <div class="flex items-end gap-4 mb-4">
+            <div class="flex-1">
+              <label for="new-missing-tooth" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Tooth Number
+              </label>
+              <input 
+                v-model="newMissingTooth" 
+                id="new-missing-tooth" 
+                type="text" 
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                placeholder="e.g. 18"
+              >
+            </div>
+            <button 
+              type="button" 
+              @click="addMissingTooth" 
+              class="px-3 py-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800"
+            >
+              Add
+            </button>
+          </div>
+          
+          <div v-if="formData.missing_teeth.length > 0" class="flex flex-wrap gap-2 mt-2">
+            <div 
+              v-for="(tooth, index) in formData.missing_teeth" 
+              :key="`missing-${index}`" 
+              class="bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full flex items-center"
+            >
+              <span class="text-sm text-gray-700 dark:text-gray-300 mr-2">{{ tooth }}</span>
+              <button 
+                type="button" 
+                @click="removeMissingTooth(index)" 
+                class="text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Impaction Info -->
+        <fieldset class="border border-gray-300 dark:border-gray-600 p-4 rounded-md mb-6">
+          <legend class="text-lg font-medium text-gray-800 dark:text-gray-200 px-2">Impaction Information</legend>
+          
+          <div v-for="(item, index) in formData.impaction_info" :key="`impaction-${index}`" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+            <div>
+              <label :for="`impaction-tooth-${index}`" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Tooth Number
+              </label>
+              <input 
+                v-model="item.tooth" 
+                :id="`impaction-tooth-${index}`" 
+                type="text" 
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                placeholder="e.g. 18"
+              >
+            </div>
+            <div>
+              <label :for="`impaction-type-${index}`" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Type
+              </label>
+              <input 
+                v-model="item.type" 
+                :id="`impaction-type-${index}`" 
+                type="text" 
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                placeholder="e.g. Mesioangular"
+              >
+            </div>
+            <div class="flex items-end gap-2">
+              <div class="flex-1">
+                <label :for="`impaction-desc-${index}`" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Description
+                </label>
+                <input 
+                  v-model="item.description" 
+                  :id="`impaction-desc-${index}`" 
+                  type="text" 
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="Additional notes"
+                >
+              </div>
+              <button 
+                type="button" 
+                @click="removeImpactionInfo(index)" 
+                class="px-2 py-2 bg-red-100 text-red-600 rounded hover:bg-red-200 dark:bg-red-900 dark:text-red-300 dark:hover:bg-red-800"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+          
+          <button 
+            type="button" 
+            @click="addImpactionInfo" 
+            class="mt-2 px-3 py-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800 flex items-center"
+          >
+            <span class="mr-1">+</span> Add Impaction
+          </button>
+        </fieldset>
+
+        <!-- Caries Chart -->
+        <fieldset class="border border-gray-300 dark:border-gray-600 p-4 rounded-md mb-6">
+          <legend class="text-lg font-medium text-gray-800 dark:text-gray-200 px-2">Caries Chart</legend>
+          
+          <div v-for="(item, index) in formData.caries_chart" :key="`caries-${index}`" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+            <div>
+              <label :for="`caries-tooth-${index}`" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Tooth Number
+              </label>
+              <input 
+                v-model="item.tooth" 
+                :id="`caries-tooth-${index}`" 
+                type="text" 
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                placeholder="e.g. 36"
+              >
+            </div>
+            <div>
+              <label :for="`caries-surfaces-${index}`" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Surfaces
+              </label>
+              <input 
+                v-model="item.surfaces_str" 
+                :id="`caries-surfaces-${index}`" 
+                type="text" 
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                placeholder="e.g. M,O,D (comma separated)"
+              >
+            </div>
+            <div class="flex items-end gap-2">
+              <div class="flex-1">
+                <label :for="`caries-notes-${index}`" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Notes
+                </label>
+                <input 
+                  v-model="item.notes" 
+                  :id="`caries-notes-${index}`" 
+                  type="text" 
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="Additional notes"
+                >
+              </div>
+              <button 
+                type="button" 
+                @click="removeCariesEntry(index)" 
+                class="px-2 py-2 bg-red-100 text-red-600 rounded hover:bg-red-200 dark:bg-red-900 dark:text-red-300 dark:hover:bg-red-800"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+          
+          <button 
+            type="button" 
+            @click="addCariesEntry" 
+            class="mt-2 px-3 py-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800 flex items-center"
+          >
+            <span class="mr-1">+</span> Add Caries Entry
+          </button>
+        </fieldset>
+        
+        <!-- Extra-Oral Findings -->
+        <fieldset class="border border-gray-300 dark:border-gray-600 p-4 rounded-md mb-6">
+          <legend class="text-lg font-medium text-gray-800 dark:text-gray-200 px-2">Extra-Oral Findings</legend>
+          
+          <div>
+            <label for="extra_oral_findings" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Notes
+            </label>
+            <textarea 
+              v-model="formData.extra_oral_findings" 
+              id="extra_oral_findings" 
+              rows="3" 
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              placeholder="Enter any extra-oral findings or observations here"
+            ></textarea>
+          </div>
+        </fieldset>
+
+        <!-- Form Buttons -->
+        <div class="flex justify-end space-x-3">
+          <button 
+            type="button" 
+            @click="handleClose" 
+            :disabled="isSubmitting"
+            class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            :disabled="isSubmitting"
+            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 flex items-center"
+          >
+            <span v-if="isSubmitting" class="mr-2">
+              <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </span>
+            {{ isSubmitting ? 'Saving...' : 'Save Examination' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>
