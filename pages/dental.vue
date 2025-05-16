@@ -72,18 +72,6 @@
         <LoaderCircle class="h-12 w-12 animate-spin text-blue-600" />
       </div>
 
-      <!-- Header -->
-      <!-- <header class="bg-white dark:bg-gray-800 shadow-sm p-4 flex justify-end items-center">
-        <button class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2 px-4 rounded mr-4 flex items-center">
-          <CircleHelp class="h-5 w-5 mr-2" />
-          Help
-        </button>
-        <div v-if="!user && !loading" class="flex items-center">
-          <div class="bg-gray-300 rounded-full h-8 w-8 flex items-center justify-center mr-2"></div>
-          <span class="text-gray-500 dark:text-gray-400">Loading user...</span>
-        </div>
-      </header> -->
-
       <!-- View Container -->
       <div class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900 p-6">
 
@@ -177,42 +165,52 @@
         <!-- Patient Records View -->
         <div v-if="currentView === 'records'">
           <div class="flex justify-between items-center mb-4">
+            <button @click="setView('patients')" class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2 px-4 rounded flex items-center">
+              <ArrowLeft class="h-5 w-5 mr-2" />
+              Back to Patients
+            </button>
             <h2 class="text-2xl font-semibold text-gray-800 dark:text-white">Dental Records for {{ selectedPatientName }}</h2>
-            <button @click="setView('patients')" class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded flex items-center">
-              <ArrowLeft class="h-5 w-5 mr-2" /> Back to Patients
-            </button>
+            <div class="flex space-x-2">
+              <button @click="handleAddRecord" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded flex items-center">
+                <Plus class="h-5 w-5 mr-2" />
+                Add Dental Record
+              </button>
+              <button @click="openOralExaminationFormModal" class="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded flex items-center">
+                <Plus class="h-5 w-5 mr-2" />
+                Add Oral Examination
+              </button>
+            </div>
           </div>
 
-          <div v-if="recordsError" class="mb-4 p-3 bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-md text-red-700 dark:text-red-300 text-sm flex items-center justify-between">
-            <span>{{ recordsError }}</span>
-            <button @click="clearError" class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-200">
-              <X class="w-4 h-4" />
-            </button>
+          <div v-if="recordsLoading" class="text-center py-4">
+            <LoaderCircle class="h-8 w-8 animate-spin text-blue-600 inline-block" />
+            <p class="text-gray-600 dark:text-gray-400">Loading records...</p>
           </div>
-          <div v-if="successMessage" class="mb-4 p-3 bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700 rounded-md text-green-700 dark:text-green-300 text-sm flex items-center justify-between">
-            <span>{{ successMessage }}</span>
-            <button @click="successMessage = null" class="text-green-500 hover:text-green-700 dark:text-green-400 dark:hover:text-green-200">
-              <X class="w-4 h-4" />
-            </button>
+          <div v-else-if="recordsError" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+            <strong class="font-bold">Error!</strong>
+            <span class="block sm:inline"> {{ recordsError }}</span>
+            <span class="absolute top-0 bottom-0 right-0 px-4 py-3" @click="recordsError = null">
+              <X class="h-6 w-6 text-red-500" />
+            </span>
           </div>
-
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="lg:col-span-1">
-              <DentalChart
-                :patient-id="selectedPatientId"
+          <div v-else class="flex flex-col lg:flex-row gap-6">
+            <div class="lg:w-2/5 xl:w-1/3">
+              <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-3">Dental Chart</h3>
+              <DentalChart 
+                :patient-id="selectedPatientId" 
+                :records="patientRecords" 
                 @add-record-for-tooth="handleAddRecordForTooth"
+                @edit-record="handleEditRecord"
+                class="mb-6 lg:mb-0" 
               />
             </div>
-            <div class="lg:col-span-2">
-              <DentalRecordsTable
-                :records="patientRecords"
-                :loading="recordsLoading"
-                @edit-record="handleEditRecord"
-                @view-details="handleViewDetails" 
+            <div class="lg:w-3/5 xl:w-2/3">
+              <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-3">Records List</h3>
+              <DentalRecordsTable 
+                :records="patientRecords" 
+                @edit-record="handleEditRecord" 
+                @view-details="handleViewDetails"
               />
-              <button @click="handleAddRecord" class="mt-4 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded flex items-center">
-                <Plus class="h-5 w-5 mr-2" /> Add New Record
-              </button>
             </div>
           </div>
         </div>
@@ -244,6 +242,16 @@
         @patient-added="handlePatientAdded"
         @error="handleFormError"
       />
+      <OralExaminationForm
+        v-if="showOralExaminationForm"
+        :modelValue="showOralExaminationForm" 
+        :patient-id="selectedPatientId"
+        :dentist-id="user?.id" 
+        @update:modelValue="showOralExaminationForm = $event"
+        @close="handleOralExaminationFormClose"
+        @save="handleOralExaminationSaved" 
+        @error="handleOralExaminationFormError" 
+      />
     </main>
   </div>
 </template>
@@ -255,6 +263,7 @@ import DentalRecordsTable from '~/components/DentalRecordsTable.vue';
 import RecordDetailView from '~/components/RecordDetailView.vue';
 import AppointmentsView from '~/components/AppointmentsView.vue';
 import UserProfile from '~/components/UserProfile.vue'; // Import UserProfile component
+import OralExaminationForm from '~/components/OralExaminationForm.vue'; // Added import
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
@@ -282,6 +291,7 @@ const loading = ref(true);
 const error = ref(null);
 const user = ref(null);
 const showAddPatientForm = ref(false);
+const showOralExaminationForm = ref(false); // Added for the new modal
 const successMessage = ref(null);
 const searchTerm = ref('');
 
@@ -330,6 +340,10 @@ const setView = (view) => {
     currentRecordForDetail.value = null;
     isCreatingNewRecordView.value = false;
     initialToothForRecordDetail.value = null;
+  }
+  // Close oral exam form if navigating away from relevant views
+  if (view !== 'records' && showOralExaminationForm.value) {
+    showOralExaminationForm.value = false;
   }
 };
 
@@ -412,6 +426,20 @@ const openAddPatientForm = () => {
   clearError();
   successMessage.value = null;
   showAddPatientForm.value = true;
+};
+
+const openOralExaminationFormModal = () => {
+  clearError();
+  successMessage.value = null;
+  if (!selectedPatientId.value) {
+    recordsError.value = "No patient selected to add an oral examination for.";
+    return;
+  }
+  if (!user.value?.id) {
+    recordsError.value = "Dentist information not available. Cannot open oral examination form.";
+    return;
+  }
+  showOralExaminationForm.value = true;
 };
 
 const handlePatientAdded = async (patientId) => {
@@ -556,6 +584,30 @@ const handleRecordDetailError = (errorMessage) => {
     recordsError.value = `Record Operation Error: ${errorMessage}`;
   }
   // Do not close the detail view automatically on error, let the user decide or fix.
+};
+
+const handleOralExaminationFormClose = () => {
+  showOralExaminationForm.value = false;
+};
+
+const handleOralExaminationSaved = async (savedData) => { // savedData might be emitted by the form
+  showOralExaminationForm.value = false;
+  successMessage.value = 'Oral examination saved successfully. Refreshing records...';
+  if (selectedPatientId.value) {
+    await fetchPatientRecords(selectedPatientId.value); // Refresh records
+  }
+  setTimeout(() => { successMessage.value = null; }, 5000);
+};
+
+const handleOralExaminationFormError = (errorMessage) => {
+  console.error('Error from OralExaminationForm:', errorMessage);
+  recordsError.value = `Oral Examination Form Error: ${errorMessage}`;
+  if (errorMessage === 'Session expired.' || (typeof errorMessage === 'string' && errorMessage.includes('Authentication token'))) {
+    recordsError.value = 'Session expired or invalid. Please log in again.';
+    handleLogout();
+    setView('dashboard');
+  }
+  // Do not close the form on error, let the user see the issue or retry.
 };
 
 // --- Appointments View Event Handlers ---
