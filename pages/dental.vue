@@ -179,7 +179,6 @@
                 <Plus class="h-5 w-5 mr-2" />
                 Add Oral Examination
               </button>
-      
             </div>
           </div>
 
@@ -194,18 +193,22 @@
               <X class="h-6 w-6 text-red-500" />
             </span>
           </div>
-          <div v-else class="flex flex-col lg:flex-row gap-6">
-            <div class="lg:w-2/5 xl:w-1/3">
+          
+          <!-- Updated Layout for Dental Chart and Records Table -->
+          <div v-else class="flex flex-col gap-6">
+            <!-- Dental Chart taking full width -->
+            <div class="w-full">
               <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-3">Dental Chart</h3>
               <DentalChart 
                 :patient-id="selectedPatientId" 
                 :records="patientRecords" 
                 @add-record-for-tooth="handleAddRecordForTooth"
                 @edit-record="handleEditRecord"
-                class="mb-6 lg:mb-0" 
+                class="mb-6" 
               />
             </div>
-            <div class="lg:w-3/5 xl:w-2/3">
+            <!-- Dental Records Table below the chart -->
+            <div class="w-full">
               <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-3">Records List</h3>
               <DentalRecordsTable 
                 :records="patientRecords" 
@@ -254,6 +257,9 @@
         @error="handleOralExaminationFormError" 
       />
     </main>
+
+
+    
   </div>
 </template>
 
