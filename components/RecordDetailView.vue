@@ -403,7 +403,7 @@
       </form>
 
 
-      <PatientAppointmentsView v-if="formData && formData.patient_id" :patient-id="formData.patient_id" class="mt-8" />
+      <!-- <PatientAppointmentsView v-if="formData && formData.patient_id" :patient-id="formData.patient_id" class="mt-8" /> -->
     </div>
 
     <!-- X-Ray Modal Viewer - Improved with zooming & external controls -->
@@ -478,7 +478,6 @@ import {
   ListOrdered, Plus, AlertTriangle, MessageSquare, ZoomIn, ZoomOut,
   ChevronLeft, ChevronRight, Upload
 } from 'lucide-vue-next';
-import PatientAppointmentsView from '~/components/PatientAppointmentsView.vue'; // Import the new component
 
 // Create a simple date formatter for consistent date presentation
 const getFormattedDate = (date) => {

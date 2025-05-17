@@ -75,10 +75,16 @@
       <!-- View Container -->
       <div class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900 p-6">
 
-        <!-- Dashboard View (Placeholder) -->
+        <!-- Dashboard View -->
         <div v-if="currentView === 'dashboard'">
-          <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-4">Dashboard</h2>
-          <p class="text-gray-600 dark:text-gray-400">Welcome to DentalTrack! Select an option from the sidebar.</p>
+          <div class="min-h-screen bg-gray-100 dark:bg-dark-1">
+            <NuxtLayout name="default">
+              <div class="p-4 sm:p-6 lg:p-8">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Dental Records Dashboard</h1>
+                <TreatmentDashboard />
+              </div>
+            </NuxtLayout>
+          </div>
         </div>
 
         <!-- Patients List View -->
@@ -216,6 +222,11 @@
                 @view-details="handleViewDetails"
               />
             </div>
+            <!-- Patient Appointments View -->
+            <div class="w-full">
+              <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-3">Appointments</h3>
+              <PatientAppointmentsView :patient-id="selectedPatientId" class="mt-6" />
+            </div>
           </div>
         </div>
 
@@ -271,6 +282,8 @@ import RecordDetailView from '~/components/RecordDetailView.vue';
 import AppointmentsView from '~/components/AppointmentsView.vue';
 import UserProfile from '~/components/UserProfile.vue'; // Import UserProfile component
 import OralExaminationForm from '~/components/OralExaminationForm.vue'; // Added import
+import PatientAppointmentsView from '~/components/PatientAppointmentsView.vue'; // Import PatientAppointmentsView
+import TreatmentDashboard from '@/components/TreatmentDashboard.vue'; // Import TreatmentDashboard
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';

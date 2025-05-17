@@ -22,19 +22,25 @@
       <div class="grid grid-cols-8 gap-1 mb-1 justify-items-center">
         <!-- Upper Right (Quadrant 1: 11-18) -->
         <div v-for="n in 8" :key="'upper-right-' + (19 - n)" class="relative text-center tooth-item">
-          <button @click="handleToothClick(19 - n)" class="focus:outline-none">
+          <button @click="handleToothClick(19 - n)" class="focus:outline-none flex flex-col items-center w-full">
             <img :src="getToothImagePath(19 - n)" @error="imageError(19 - n)" :alt="'Tooth ' + (19 - n)" class="h-16 w-auto mx-auto" :class="{'opacity-50': !toothImageExists[19 - n]}"/>
-            <span v-if="!toothImageExists[19 - n]" class="absolute inset-0 flex items-center justify-center text-xs text-gray-500">No Image</span>
-            <span class="block text-xs mt-1 text-gray-700 dark:text-gray-300">{{ 19 - n }}</span>
+            <span v-if="!toothImageExists[19 - n]" class="absolute inset-0 flex items-center justify-center text-xs text-gray-500 pointer-events-none">No Image</span>
+            <div class="mt-1 text-center">
+              <span class="block text-xs text-gray-700 dark:text-gray-300">{{ 19 - n }}</span>
+              <img :src="getIconForTooth(19 - n)" :alt="'Icon ' + (19 - n)" class="h-3 w-3 mx-auto mt-0.5"/>
+            </div>
             <span v-if="getToothStatus(19 - n)" :class="getStatusDotClass(getToothStatus(19 - n))"></span>
           </button>
         </div>
         <!-- Upper Left (Quadrant 2: 21-28) -->
         <div v-for="n in 8" :key="'upper-left-' + (20 + n)" class="relative text-center tooth-item">
-          <button @click="handleToothClick(20 + n)" class="focus:outline-none">
+          <button @click="handleToothClick(20 + n)" class="focus:outline-none flex flex-col items-center w-full">
             <img :src="getToothImagePath(20 + n)" @error="imageError(20 + n)" :alt="'Tooth ' + (20 + n)" class="h-16 w-auto mx-auto" :class="{'opacity-50': !toothImageExists[20 + n]}"/>
-            <span v-if="!toothImageExists[20 + n]" class="absolute inset-0 flex items-center justify-center text-xs text-gray-500">No Image</span>
-            <span class="block text-xs mt-1 text-gray-700 dark:text-gray-300">{{ 20 + n }}</span>
+            <span v-if="!toothImageExists[20 + n]" class="absolute inset-0 flex items-center justify-center text-xs text-gray-500 pointer-events-none">No Image</span>
+            <div class="mt-1 text-center">
+              <span class="block text-xs text-gray-700 dark:text-gray-300">{{ 20 + n }}</span>
+              <img :src="getIconForTooth(20 + n)" :alt="'Icon ' + (20 + n)" class="h-3 w-3 mx-auto mt-0.5"/>
+            </div>
             <span v-if="getToothStatus(20 + n)" :class="getStatusDotClass(getToothStatus(20 + n))"></span>
           </button>
         </div>
@@ -44,19 +50,25 @@
       <div class="grid grid-cols-8 gap-1 mt-1 justify-items-center">
         <!-- Lower Right (Quadrant 4: 41-48) -->
         <div v-for="n in 8" :key="'lower-right-' + (49 - n)" class="relative text-center tooth-item">
-          <button @click="handleToothClick(49 - n)" class="focus:outline-none">
+          <button @click="handleToothClick(49 - n)" class="focus:outline-none flex flex-col items-center w-full">
             <img :src="getToothImagePath(49 - n)" @error="imageError(49 - n)" :alt="'Tooth ' + (49 - n)" class="h-16 w-auto mx-auto" :class="{'opacity-50': !toothImageExists[49 - n]}"/>
-            <span v-if="!toothImageExists[49 - n]" class="absolute inset-0 flex items-center justify-center text-xs text-gray-500">No Image</span>
-            <span class="block text-xs mt-1 text-gray-700 dark:text-gray-300">{{ 49 - n }}</span>
+            <span v-if="!toothImageExists[49 - n]" class="absolute inset-0 flex items-center justify-center text-xs text-gray-500 pointer-events-none">No Image</span>
+            <div class="mt-1 text-center">
+              <span class="block text-xs text-gray-700 dark:text-gray-300">{{ 49 - n }}</span>
+              <img :src="getIconForTooth(49 - n)" :alt="'Icon ' + (49 - n)" class="h-3 w-3 mx-auto mt-0.5"/>
+            </div>
             <span v-if="getToothStatus(49 - n)" :class="getStatusDotClass(getToothStatus(49 - n))"></span>
           </button>
         </div>
         <!-- Lower Left (Quadrant 3: 31-38) -->
         <div v-for="n in 8" :key="'lower-left-' + (30 + n)" class="relative text-center tooth-item">
-          <button @click="handleToothClick(30 + n)" class="focus:outline-none">
+          <button @click="handleToothClick(30 + n)" class="focus:outline-none flex flex-col items-center w-full">
             <img :src="getToothImagePath(30 + n)" @error="imageError(30 + n)" :alt="'Tooth ' + (30 + n)" class="h-16 w-auto mx-auto" :class="{'opacity-50': !toothImageExists[30 + n]}"/>
-            <span v-if="!toothImageExists[30 + n]" class="absolute inset-0 flex items-center justify-center text-xs text-gray-500">No Image</span>
-            <span class="block text-xs mt-1 text-gray-700 dark:text-gray-300">{{ 30 + n }}</span>
+            <span v-if="!toothImageExists[30 + n]" class="absolute inset-0 flex items-center justify-center text-xs text-gray-500 pointer-events-none">No Image</span>
+            <div class="mt-1 text-center">
+              <span class="block text-xs text-gray-700 dark:text-gray-300">{{ 30 + n }}</span>
+              <img :src="getIconForTooth(30 + n)" :alt="'Icon ' + (30 + n)" class="h-3 w-3 mx-auto mt-0.5"/>
+            </div>
             <span v-if="getToothStatus(30 + n)" :class="getStatusDotClass(getToothStatus(30 + n))"></span>
           </button>
         </div>
@@ -105,6 +117,15 @@ const getToothImagePath = (toothNumber) => {
 
 const imageError = (toothNumber) => {
   toothImageExists[toothNumber] = false;
+};
+
+const getIconForTooth = (toothNumber) => {
+  const lastDigit = String(toothNumber).slice(-1);
+  if (['6', '7', '8'].includes(lastDigit)) {
+    return '/img/teeth/square.jpeg'; // Molars
+  } else {
+    return '/img/teeth/cross.png'; // Incisors, Canines, Premolars
+  }
 };
 
 const toothConditions = computed(() => {

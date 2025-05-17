@@ -102,6 +102,7 @@
                   <select :id="`treatment_type_${treatmentIndex}`" v-model="treatment.treatment_type" required
                           class="form-input-field">
                     <option disabled value="">Select treatment</option>
+                    <option value="checkup">Checkup</option>
                     <option value="filling">Filling</option>
                     <option value="root_canal">Root Canal</option>
                     <option value="extraction">Extraction</option>
@@ -111,6 +112,7 @@
                     <option value="implant">Implant</option>
                     <option value="orthodontics">Orthodontics</option>
                     <option value="other">Other</option>
+
                   </select>
                 </div>
                 <div>
