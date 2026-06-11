@@ -112,16 +112,45 @@
                     <option value="implant">Implant</option>
                     <option value="orthodontics">Orthodontics</option>
                     <option value="other">Other</option>
-
                   </select>
                 </div>
                 <div>
                   <label :for="`treatment_cost_${treatmentIndex}`" class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Estimated Cost</label>
-                  <input type="number" step="0.01" :id="`treatment_cost_${treatmentIndex}`" v-model.number="treatment.cost"
-                         placeholder="0.00"
-                         class="form-input-field">
+                  <div class="flex items-center space-x-2">
+                    <USelectMenu 
+                      v-model="treatment.currency" 
+                      :items="currencyOptions" 
+                      value-attribute="value"
+                      option-attribute="label"
+                      searchable
+                      searchable-placeholder="Search currency..."
+                      class="w-32"
+                      @update:model-value="(val) => updatePreferredCurrency(val)" 
+                    />
+                    <input type="number" step="0.01" :id="`treatment_cost_${treatmentIndex}`" v-model.number="treatment.cost"
+                           :placeholder="`0.00`"
+                           class="form-input-field flex-1">
+                  </div>
                 </div>
               </div>
+              
+              <!-- Detailed Cost Section -->
+              <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 rounded-md">
+                <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Detailed Cost</h5>
+                <div class="flex items-center">
+                  <div class="w-10 h-10 flex items-center justify-center bg-gray-200 dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-l-md">
+                    {{ getCurrencySymbol(treatment.currency) }}
+                  </div>
+                  <input type="number" step="0.01" :id="`treatment_cost_detailed_${treatmentIndex}`" v-model.number="treatment.cost"
+                         placeholder="Enter amount"
+                         class="form-input-field rounded-l-none flex-1">
+                </div>
+                <div class="mt-2 text-sm">
+                  <span class="text-gray-600 dark:text-gray-400">Total: </span>
+                  <span class="font-medium">{{ formatCurrency(treatment.cost, treatment.currency) }}</span>
+                </div>
+              </div>
+              
               <div class="mt-4">
                 <label :for="`treatment_notes_${treatmentIndex}`" class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Treatment Notes</label>
                 <textarea :id="`treatment_notes_${treatmentIndex}`" v-model="treatment.notes" rows="3"
@@ -221,6 +250,7 @@
 import { ref, watch, onMounted } from 'vue';
 import axios from 'axios';
 import Cookies from 'js-cookie';
+ 
 import { X, ClipboardEdit, LoaderCircle, Image } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -247,6 +277,89 @@ const isSubmitting = ref(false);
 
 const predefinedConditions = ["Healthy", "Decayed", "Filled", "Missing", "Cracked", "Wisdom", "Impacted"];
 
+// Constant for localStorage key
+const PREFERRED_CURRENCY_KEY = 'preferredDentalCurrency';
+
+// Currency options
+const currencyOptions = ref([
+  { value: 'USD', label: 'USD - US Dollar' },
+  { value: 'EUR', label: 'EUR - Euro' },
+  { value: 'JPY', label: 'JPY - Japanese Yen' },
+  { value: 'GBP', label: 'GBP - British Pound' },
+  { value: 'AUD', label: 'AUD - Australian Dollar' },
+  { value: 'CAD', label: 'CAD - Canadian Dollar' },
+  { value: 'CHF', label: 'CHF - Swiss Franc' },
+  { value: 'CNY', label: 'CNY - Chinese Yuan' },
+  { value: 'SEK', label: 'SEK - Swedish Krona' },
+  { value: 'NZD', label: 'NZD - New Zealand Dollar' },
+  { value: 'MXN', label: 'MXN - Mexican Peso' },
+  { value: 'SGD', label: 'SGD - Singapore Dollar' },
+  { value: 'HKD', label: 'HKD - Hong Kong Dollar' },
+  { value: 'NOK', label: 'NOK - Norwegian Krone' },
+  { value: 'KRW', label: 'KRW - South Korean Won' },
+  { value: 'TRY', label: 'TRY - Turkish Lira' },
+  { value: 'RUB', label: 'RUB - Russian Ruble' },
+  { value: 'INR', label: 'INR - Indian Rupee' },
+  { value: 'BRL', label: 'BRL - Brazilian Real' },
+  { value: 'ZAR', label: 'ZAR - South African Rand' }
+]);
+
+// Helper function to get currency symbol
+const getCurrencySymbol = (currencyCode) => {
+  const symbols = {
+    'USD': '$',
+    'EUR': '€',
+    'JPY': '¥',
+    'GBP': '£', 
+    'AUD': 'A$',
+    'CAD': 'C$',
+    'CHF': 'CHF',
+    'CNY': '¥',
+    'SEK': 'kr',
+    'NZD': 'NZ$',
+    'MXN': '$',
+    'SGD': 'S$',
+    'HKD': 'HK$',
+    'NOK': 'kr',
+    'KRW': '₩',
+    'TRY': '₺',
+    'RUB': '₽',
+    'INR': '₹',
+    'BRL': 'R$',
+    'ZAR': 'R',
+  };
+  
+  return symbols[currencyCode] || currencyCode;
+};
+
+// Format currency with currency.js
+const formatCurrency = (amount, currencyCode = 'USD') => {
+  if (amount === null || amount === undefined) return '';
+  
+  const currencyOptions = {
+    symbol: getCurrencySymbol(currencyCode),
+    precision: 2,
+  };
+  
+  return currency(amount, currencyOptions).format();
+};
+
+// Get default currency from localStorage
+const getDefaultCurrency = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem(PREFERRED_CURRENCY_KEY) || 'USD';
+  }
+  return 'USD';
+};
+
+// Function to update preferred currency in localStorage
+const updatePreferredCurrency = (newCurrency) => {
+  if (typeof window !== 'undefined' && newCurrency) {
+    localStorage.setItem(PREFERRED_CURRENCY_KEY, newCurrency);
+    console.log(`Currency preference saved: ${newCurrency}`);
+  }
+};
+
 const defaultStep = () => ({
   description: '',
   step_date: null,
@@ -261,7 +374,8 @@ const defaultTreatment = () => ({
   xray_image: null,
   xray_image_name: '',
   xray_image_url: '',
-  steps: []
+  steps: [],
+  currency: getDefaultCurrency(), // Use default currency from localStorage
 });
 
 const initialFormData = () => ({
@@ -362,6 +476,7 @@ watch(() => props.recordData, (newVal) => {
         ? JSON.parse(JSON.stringify(newVal.treatments)).map(t => ({
             ...defaultTreatment(),
             ...t,
+            currency: t.currency || getDefaultCurrency(), // Ensure currency is set
             xray_image: null,
             xray_image_name: t.xray_image_url ? '' : (t.xray_image_name || ''),
             steps: t.steps ? JSON.parse(JSON.stringify(t.steps)).map(s => ({ ...defaultStep(), ...s })) : []
@@ -374,8 +489,8 @@ watch(() => props.recordData, (newVal) => {
       ...initialFormData(),
       tooth_number: props.initialToothNumber || null,
     };
-     if (!formData.value.treatments || formData.value.treatments.length === 0) {
-        formData.value.treatments = [defaultTreatment()];
+    if (!formData.value.treatments || formData.value.treatments.length === 0) {
+      formData.value.treatments = [defaultTreatment()];
     }
   }
   error.value = null;
@@ -463,7 +578,8 @@ const handleSubmit = async () => {
         description: step.description,
         step_date: step.step_date || null,
         status: step.status
-      }))
+      })),
+      currency: t.currency
     }))
   };
 
@@ -556,7 +672,7 @@ onMounted(() => {
     formData.value.tooth_number = props.initialToothNumber;
   }
   if (!formData.value.treatments || formData.value.treatments.length === 0) {
-      formData.value.treatments = [defaultTreatment()];
+    formData.value.treatments = [defaultTreatment()];
   }
 });
 
@@ -596,5 +712,25 @@ onMounted(() => {
 
 input:disabled, select:disabled, textarea:disabled {
   cursor: not-allowed;
+}
+
+/* Add custom styles for the currency display */
+.currency-symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+}
+
+.currency-display {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+  color: theme('colors.gray.600');
+}
+
+.dark .currency-display {
+  color: theme('colors.gray.400');
 }
 </style>

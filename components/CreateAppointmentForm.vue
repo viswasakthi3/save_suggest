@@ -378,15 +378,15 @@ input:focus,
 select:focus,
 textarea:focus,
 .dp__input_focus { /* For vue3-datepicker if it uses this class */
-  box-shadow: 0 0 0 2px theme('colors.blue.500');
-  border-color: theme('colors.blue.500') !important; /* Important to override datepicker styles if needed */
+  box-shadow: 0 0 0 2px #3b82f6; /* Replaced theme('colors.blue.500') with hex value */
+  border-color: #3b82f6 !important; /* Replaced theme('colors.blue.500') with hex value */
 }
 .dark input:focus,
 .dark select:focus,
 .dark textarea:focus,
 .dark .dp__input_focus {
-  box-shadow: 0 0 0 2px theme('colors.blue.400');
-  border-color: theme('colors.blue.400') !important;
+  box-shadow: 0 0 0 2px #60a5fa; /* Replaced theme('colors.blue.400') with hex value */
+  border-color: #60a5fa !important; /* Replaced theme('colors.blue.400') with hex value */
 }
 
 /* Custom appearance for select to show custom arrow */

@@ -357,9 +357,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
 }
 
-/* Improved focus visibility for accessibility */
+/* Improved focus visibility for accessibility
 input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible {
   outline: 2px solid theme('colors.blue.500');
   outline-offset: 1px;
-}
+} */
 </style>

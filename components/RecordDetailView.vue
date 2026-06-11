@@ -190,8 +190,8 @@
           </div>
 
           <!-- Right Column: Treatments -->
-          <div class="treatments-container">
-            <div class="treatments-header">
+          <div class="treatments-container card">
+            <div class="card-header treatments-header">
               <div class="section-title">
                 <ListChecks size="20" />
                 <h2>Treatments</h2>
@@ -212,88 +212,85 @@
               <p>Click "Add Treatment" to begin creating a treatment plan</p>
             </div>
 
-            <TransitionGroup name="treatment-list" tag="div" class="treatments-list">
-              <div v-for="(treatment, treatmentIndex) in formData.treatments"
-                   :key="treatmentIndex"
-                   class="treatment-card card">
+            <TransitionGroup name="treatment-list" tag="div" class="space-y-6 treatments-list">
+              <div v-for="(treatment, treatmentIndex) in formData.treatments" :key="treatment.id || treatmentIndex" class="treatment-item card card-nested">
                 <div class="card-header">
-                  <div class="card-title">
-                    <Stethoscope size="18" />
-                    <h3>{{ getTreatmentTitle(treatment.treatment_type, treatmentIndex) }}</h3>
-                  </div>
-                  <button v-if="formData.treatments.length > 0"
-                          type="button"
-                          @click="removeTreatment(treatmentIndex)"
-                          class="btn btn-icon btn-danger-subtle">
-                    <Trash2 size="16" aria-label="Remove treatment" />
-                  </button>
-                </div>
-
-                <div class="card-content">
-                  <div class="form-row two-cols">
-                    <div class="form-group">
-                      <label :for="`detail_treatment_type_${treatmentIndex}`" class="form-label required">Treatment Type</label>
-                      <div class="select-wrapper">
-                        <select :id="`detail_treatment_type_${treatmentIndex}`"
-                                v-model="treatment.treatment_type"
-                                required
-                                class="form-select">
-                          <option disabled value="">Select treatment</option>
-                          <option value="filling">Filling</option>
-                          <option value="root_canal">Root Canal</option>
-                          <option value="extraction">Extraction</option>
-                          <option value="crown">Crown</option>
-                          <option value="cleaning">Cleaning</option>
-                          <option value="bridge">Bridge</option>
-                          <option value="implant">Implant</option>
-                          <option value="orthodontics">Orthodontics</option>
-                          <option value="other_treatment">Other (Specify)</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <label :for="`detail_treatment_cost_${treatmentIndex}`" class="form-label">Estimated Cost</label>
-                      <div class="input-with-prefix">
-                        <span class="input-prefix">$</span>
-                        <input type="number"
-                               step="0.01"
-                               :id="`detail_treatment_cost_${treatmentIndex}`"
-                               v-model.number="treatment.cost"
-                               placeholder="0.00"
-                               class="form-input has-prefix">
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- 3. Treatment Notes Toggle & X-Ray -->
-                  <div class="treatment-options-row">
-                    <div class="form-switch">
-                      <input :id="`detail_xray_taken_${treatmentIndex}`"
-                             type="checkbox"
-                             v-model="treatment.xray_taken"
-                             class="switch-input">
-                      <label :for="`detail_xray_taken_${treatmentIndex}`" class="switch-label">
-                        X-Ray Taken
-                      </label>
-                    </div>
-                    <button type="button"
-                            @click="toggleTreatmentNotes(treatmentIndex)"
-                            class="btn btn-link btn-toggle-notes">
-                      <MessageSquare size="16" />
-                      <span>{{ treatmentNotesVisibility[treatmentIndex] ? 'Hide Notes' : 'Add/View Notes' }}</span>
+                  <h4 class="card-title flex-grow">{{ getTreatmentTitle(treatment.treatment_type, treatmentIndex) }}</h4>
+                  <div class="ml-auto flex items-center space-x-2">
+                     <USelectMenu 
+                        v-model="treatment.currency" 
+                        :items="currencyOptions" 
+                        value-attribute="value"
+                        option-attribute="label"
+                        searchable
+                        searchable-placeholder="Search currency..."
+                        class="w-40" 
+                        @update:model-value="updatePreferredCurrency"
+                      />
+                    <input type="number" :id="`treatment_cost_top_${treatmentIndex}`" v-model.number="treatment.cost" class="form-input form-input-sm w-32" placeholder="Est. Cost">
+                    <button type="button" @click="removeTreatment(treatmentIndex)" class="btn btn-xs btn-danger-subtle btn-icon" title="Remove Treatment">
+                        <Trash2 class="w-4 h-4" />
                     </button>
                   </div>
+                </div>
+                <div class="card-content space-y-4">
+                  <div class="form-group">
+                    <label :for="`treatment_type_${treatmentIndex}`" class="form-label">Treatment Type</label>
+                    <input type="text" :id="`treatment_type_${treatmentIndex}`" v-model="treatment.treatment_type" class="form-input" placeholder="e.g., Filling, Extraction">
+                  </div>
 
-                  <TransitionExpand>
-                    <div v-if="treatmentNotesVisibility[treatmentIndex]" class="treatment-notes-area">
-                      <label :for="`detail_treatment_notes_${treatmentIndex}`" class="form-label">Treatment Notes</label>
-                      <textarea :id="`detail_treatment_notes_${treatmentIndex}`"
-                                v-model="treatment.notes"
-                                rows="3"
-                                placeholder="Add any notes specific to this treatment..."
-                                class="form-textarea"></textarea>
+                  <!-- Cost Section (Separate) -->
+                  <div class="form-group">
+                    <label :for="`treatment_cost_main_${treatmentIndex}`" class="form-label">Detailed Cost ({{treatment.currency}})</label>
+                    <input type="number" :id="`treatment_cost_main_${treatmentIndex}`" v-model.number="treatment.cost" class="form-input" :placeholder="`Enter cost in ${treatment.currency}`">
+                  </div>
+
+                  <!-- Payment Entry Section -->
+                  <div class="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <h5 class="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Record Payment</h5>
+                    
+                    <div class="form-group mb-1">
+                        <label :for="`new_payment_amount_${treatmentIndex}`" class="form-label text-xs">Amount Paid ({{treatment.currency}})</label>
+                        <div class="flex items-center">
+                            <input type="number" :id="`new_payment_amount_${treatmentIndex}`" v-model.number="treatment.new_payment_amount" class="form-input form-input-sm flex-grow" placeholder="Amount">
+                            <button type="button" @click="addPaymentToTreatment(treatmentIndex)" class="btn btn-icon btn-secondary btn-xs ml-2 p-1.5" title="Add this payment">
+                                <Plus class="w-3.5 h-3.5" />
+                            </button>
+                        </div>
                     </div>
-                  </TransitionExpand>
+
+                    <div class="grid grid-cols-2 gap-x-3 items-end">
+                        <div class="form-group">
+                            <label :for="`new_payment_date_${treatmentIndex}`" class="form-label text-xs">Payment Date</label>
+                            <input type="date" :id="`new_payment_date_${treatmentIndex}`" v-model="treatment.new_payment_date" class="form-input form-input-sm w-full">
+                        </div>
+                        <div class="form-group">
+                            <label :for="`new_payment_mode_${treatmentIndex}`" class="form-label text-xs">Mode</label>
+                            <div class="select-wrapper">
+                                <select :id="`new_payment_mode_${treatmentIndex}`" v-model="treatment.new_payment_mode" class="form-select form-select-sm w-full">
+                                    <option value="" disabled>Select mode</option>
+                                    <option v-for="option in transactionModeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                  </div>
+
+                  <!-- Payment History (Compact) -->
+                  <div v-if="treatment.payments && treatment.payments.length > 0" class="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700 text-xs">
+                    <h6 class="font-semibold mb-1 text-gray-600 dark:text-gray-400">Payment History:</h6>
+                    <ul class="space-y-1">
+                      <li v-for="(payment, paymentIndex) in treatment.payments" :key="paymentIndex" class="flex justify-between items-center text-gray-500 dark:text-gray-400 p-1 bg-gray-50 dark:bg-gray-750 rounded-sm">
+                        <span>{{ getFormattedDate(payment.date) }}: {{ formatCurrency(payment.amount, treatment.currency) }}</span>
+                        <span class="italic">({{ transactionModeOptions.find(m => m.value === payment.mode)?.label || payment.mode }})</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Balance -->
+                  <div class="mt-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Balance: {{ calculateBalance(treatment) }}
+                  </div>
 
                   <!-- Treatment Steps Section -->
                   <div class="treatment-steps">
@@ -374,15 +371,6 @@
                 </div>
               </div>
             </TransitionGroup>
-
-            <!-- Patient Appointments Section -->
-            <!-- <PatientAppointmentsView v-if="formData.patient_id" :patient-id="formData.patient_id" class="mt-8" />
-            <div v-else class="mt-8 text-gray-500 dark:text-gray-400">
-              <p>Patient ID not available to load appointments.</p>
-            </div> -->
- 
-
-            
           </div>
         </div>
 
@@ -472,6 +460,7 @@ import { ref, watch, onMounted, computed, h, shallowRef } from 'vue';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import DatePicker from './DatePicker.vue';
+ 
 import {
   X, ClipboardEdit, LoaderCircle, Image, ArrowLeft, FileText,
   ListChecks, PlusCircle, Info, Stethoscope, Trash2, UploadCloud,
@@ -498,6 +487,19 @@ const getFormattedDate = (date) => {
     return 'Invalid date';
   }
 };
+
+// Helper to format date for storage (YYYY-MM-DD)
+const formatDateForStorage = (date) => {
+  if (!date) return null;
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return null; // Invalid date
+  const year = d.getFullYear();
+  const month = (`0${d.getMonth() + 1}`).slice(-2);
+  const day = (`0${d.getDate()}`).slice(-2);
+  return `${year}-${month}-${day}`;
+};
+
+const PREFERRED_CURRENCY_KEY = 'preferredDentalCurrency';
 
 const props = defineProps({
   recordDataProp: {
@@ -555,22 +557,110 @@ const stepStatusOptions = [
   { value: 'skipped', label: 'Skipped', color: 'red' },
 ];
 
+// Expanded currency options
+const currencyOptions = ref([
+  { value: 'USD', label: 'USD - US Dollar' },
+  { value: 'EUR', label: 'EUR - Euro' },
+  { value: 'JPY', label: 'JPY - Japanese Yen' },
+  { value: 'GBP', label: 'GBP - British Pound' },
+  { value: 'AUD', label: 'AUD - Australian Dollar' },
+  { value: 'CAD', label: 'CAD - Canadian Dollar' },
+  { value: 'CHF', label: 'CHF - Swiss Franc' },
+  { value: 'CNY', label: 'CNY - Chinese Yuan' },
+  { value: 'SEK', label: 'SEK - Swedish Krona' },
+  { value: 'NZD', label: 'NZD - New Zealand Dollar' },
+  { value: 'MXN', label: 'MXN - Mexican Peso' },
+  { value: 'SGD', label: 'SGD - Singapore Dollar' },
+  { value: 'HKD', label: 'HKD - Hong Kong Dollar' },
+  { value: 'NOK', label: 'NOK - Norwegian Krone' },
+  { value: 'KRW', label: 'KRW - South Korean Won' },
+  { value: 'TRY', label: 'TRY - Turkish Lira' },
+  { value: 'RUB', label: 'RUB - Russian Ruble' },
+  { value: 'INR', label: 'INR - Indian Rupee' },
+  { value: 'BRL', label: 'BRL - Brazilian Real' },
+  { value: 'ZAR', label: 'ZAR - South African Rand' }
+]);
+
+const transactionModeOptions = ref([
+  { value: 'cash', label: 'Cash' },
+  { value: 'card', label: 'Card' },
+  { value: 'bank_transfer', label: 'Bank Transfer' },
+  { value: 'upi', label: 'UPI' },
+  { value: 'other', label: 'Other' },
+]);
+
 const defaultStep = () => ({
   description: '',
   step_date: null,
   status: 'pending'
 });
 
-const defaultTreatment = () => ({
-  treatment_type: '',
-  cost: null,
-  notes: '',
-  xray_taken: false,
-  xray_image: null,
-  xray_image_name: '',
-  xray_image_url: '',
-  steps: []
-});
+// Helper function to get currency symbol
+const getCurrencySymbol = (currencyCode) => {
+  const symbols = {
+    'USD': '$',
+    'EUR': '€',
+    'JPY': '¥',
+    'GBP': '£', 
+    'AUD': 'A$',
+    'CAD': 'C$',
+    'CHF': 'CHF',
+    'CNY': '¥',
+    'SEK': 'kr',
+    'NZD': 'NZ$',
+    'MXN': '$',
+    'SGD': 'S$',
+    'HKD': 'HK$',
+    'NOK': 'kr',
+    'KRW': '₩',
+    'TRY': '₺',
+    'RUB': '₽',
+    'INR': '₹',
+    'BRL': 'R$',
+    'ZAR': 'R',
+  };
+  
+  return symbols[currencyCode] || currencyCode;
+};
+
+// Update the currency formatter function for consistent display
+const formatCurrency = (amount, currencyCode = 'USD') => {
+  if (amount === null || amount === undefined) return '';
+  
+  const currencyOptions = {
+    symbol: getCurrencySymbol(currencyCode),
+    precision: 2,
+  };
+  
+  return currency(amount, currencyOptions).format();
+};
+
+// Preset the default currency based on localStorage or fallback to USD
+const getDefaultCurrency = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem(PREFERRED_CURRENCY_KEY) || 'USD';
+  }
+  return 'USD';
+};
+
+const defaultTreatment = () => {
+  const preferredCurrency = getDefaultCurrency();
+  return {
+    treatment_type: '',
+    cost: null,
+    notes: '',
+    xray_taken: false,
+    xray_image: null,
+    xray_image_name: '',
+    xray_image_url: '',
+    steps: [],
+    currency: preferredCurrency,
+    payments: [],
+    new_payment_date: null,
+    new_payment_amount: null,
+    new_payment_mode: '',
+  };
+};
 
 const initialFormData = () => ({
   tooth_number: props.initialToothNumberProp,
@@ -699,6 +789,64 @@ const removeStep = (treatmentIndex, stepIndex) => {
   }
 };
 
+// Payment related methods
+const addPaymentToTreatment = (treatmentIndex) => {
+  const treatment = formData.value.treatments[treatmentIndex];
+  if (treatment.new_payment_amount && treatment.new_payment_amount > 0 && treatment.new_payment_date && treatment.new_payment_mode) {
+    treatment.payments.push({
+      date: formatDateForStorage(treatment.new_payment_date),
+      amount: parseFloat(treatment.new_payment_amount),
+      mode: treatment.new_payment_mode,
+    });
+    // Reset new payment form fields for this treatment
+    treatment.new_payment_date = null;
+    treatment.new_payment_amount = null;
+    treatment.new_payment_mode = '';
+    error.value = null; // Clear any previous errors specific to payment
+  } else {
+    error.value = "Payment date, amount (must be > 0), and mode of transaction are required to add a payment.";
+  }
+};
+
+const calculateTotalPaid = (treatment) => {
+  if (!treatment || !treatment.payments) return 0;
+  return treatment.payments.reduce((sum, payment) => sum + (parseFloat(payment.amount) || 0), 0).toFixed(2);
+};
+
+const calculateBalance = (treatment) => {
+  const totalCost = parseFloat(treatment.cost) || 0;
+  const totalPaid = parseFloat(calculateTotalPaid(treatment)) || 0;
+  const balance = totalCost - totalPaid;
+  
+  return formatCurrency(balance, treatment.currency);
+};
+
+// Watch for currency changes in any treatment to update local storage
+watch(() => formData.value.treatments, (newTreatments) => {
+  if (newTreatments && newTreatments.length > 0) {
+    const preferredCurrency = getDefaultCurrency();
+    newTreatments.forEach(treatment => {
+      if (!treatment.currency) {
+        treatment.currency = preferredCurrency;
+      }
+    });
+  }
+}, { deep: true, immediate: true });
+
+// Function to update preferred currency in local storage with enhanced validation
+const updatePreferredCurrency = (newCurrency) => {
+  if (typeof window !== 'undefined' && newCurrency) {
+    localStorage.setItem(PREFERRED_CURRENCY_KEY, newCurrency);
+    console.log(`Currency preference saved: ${newCurrency}`);
+  }
+};
+
+// Format the displayed cost with currency
+const getFormattedCost = (cost, currencyCode) => {
+  if (cost === null || cost === undefined) return '-';
+  return formatCurrency(cost, currencyCode);
+};
+
 watch(() => props.recordDataProp, (newVal) => {
   if (newVal && newVal.id) {
     isEditing.value = true;
@@ -709,39 +857,34 @@ watch(() => props.recordDataProp, (newVal) => {
       conditionValue = 'other';
     }
 
+    const loadedFormData = { ...initialFormData(), ...newVal, patient_id: props.patientId || newVal.patient_id };
+    if (loadedFormData.treatments && Array.isArray(loadedFormData.treatments)) {
+      loadedFormData.treatments = loadedFormData.treatments.map(t => ({
+        ...defaultTreatment(),
+        ...t,
+        currency: t.currency || (typeof window !== 'undefined' ? localStorage.getItem(PREFERRED_CURRENCY_KEY) || 'USD' : 'USD')
+      }));
+    } else {
+      loadedFormData.treatments = [defaultTreatment()];
+    }
+
     formData.value = {
-      id: newVal.id,
-      tooth_number: newVal.tooth_number,
+      ...loadedFormData,
       condition: conditionValue,
-      other_condition_text: otherConditionTextValue,
-      notes: newVal.notes || '',
-      status: newVal.status || 'initial',
-      treatments: (newVal.treatments && newVal.treatments.length > 0)
-        ? JSON.parse(JSON.stringify(newVal.treatments)).map(t => ({
-            ...defaultTreatment(),
-            ...t,
-            xray_image: null,
-            xray_image_name: t.xray_image_url ? '' : (t.xray_image_name || ''),
-            steps: t.steps ? JSON.parse(JSON.stringify(t.steps)).map(s => {
-              // Convert date string to Date object for the date picker
-              const step = { ...defaultStep(), ...s };
-              if (step.step_date) {
-                step.step_date = formatDate(step.step_date);
-              }
-              return step;
-            }) : []
-          }))
-        : [defaultTreatment()]
+      other_condition_text: otherConditionTextValue
     };
   } else {
     isEditing.value = false;
     formData.value = {
       ...initialFormData(),
-      tooth_number: props.initialToothNumberProp || (formData.value.tooth_number || null), // Ensure tooth_number is set if available
-      patient_id: props.patientId || null // Ensure patient_id is set if available
+      tooth_number: props.initialToothNumberProp || (formData.value.tooth_number || null),
+      patient_id: props.patientId || null
     };
     if (!formData.value.treatments || formData.value.treatments.length === 0) {
         formData.value.treatments = [defaultTreatment()];
+    }
+    if (formData.value.treatments.length > 0) {
+        formData.value.treatments[0].currency = typeof window !== 'undefined' ? localStorage.getItem(PREFERRED_CURRENCY_KEY) || 'USD' : 'USD';
     }
   }
   initializeTreatmentNotesVisibility(formData.value.treatments);
@@ -837,6 +980,11 @@ const handleSubmit = async () => {
         description: step.description,
         step_date: step.step_date || null,
         status: step.status
+      })),
+      payments: t.payments.map(payment => ({
+        date: payment.date,
+        amount: payment.amount,
+        mode: payment.mode
       }))
     }))
   };
@@ -957,11 +1105,14 @@ const formatDatesBeforeSubmit = () => {
   formData.value.treatments.forEach(treatment => {
     if (treatment.steps) {
       treatment.steps.forEach(step => {
-        if (step.step_date instanceof Date) {
-          step.step_date = step.step_date.toISOString().split('T')[0];
+        if (step.step_date) {
+          step.step_date = formatDateForStorage(step.step_date);
         }
       });
     }
+    // Payment dates are already formatted strings.
+    // If new_payment_date was somehow populated without adding, ensure it's not a Date object
+    // However, standard flow is through addPaymentToTreatment.
   });
 };
 
@@ -1708,7 +1859,7 @@ onMounted(() => {
 .btn-with-icon {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap:   0.5rem;
 }
 
 .btn-danger-subtle {
@@ -2666,7 +2817,7 @@ onMounted(() => {
   padding: 0.625rem 0.875rem;
   background-color: rgb(var(--color-bg));
   border: 1px solid rgb(var(--color-border));
-  border-radius: var(--radius-md));
+  border-radius: var(--radius-md);
   min-height: var(--form-control-height);
   overflow: hidden;
 }
@@ -2746,5 +2897,71 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 1.75rem; /* Increased gap between treatments */
+}
+
+.payment-input-section .form-group {
+  margin-bottom: 0.5rem; /* Adjust spacing for payment inputs */
+}
+
+.payments-display-section ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.payments-display-section li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-nested {
+  background-color: var(--card-bg-nested, #f9fafb);
+  border: 1px solid var(--card-border-color-nested, #e5e7eb);
+}
+.dark .card-nested {
+  background-color: var(--dark-card-bg-nested, #2d3748); /* Adjusted for better contrast */
+  border-color: var(--dark-card-border-color-nested, #4a5568);
+}
+
+/* Ensure date picker blends well */
+.date-picker-custom :deep(.dp__input) {
+    border-color: var(--form-input-border) !important;
+    background-color: var(--form-input-bg) !important;
+    color: var(--form-input-text) !important;
+    height: var(--form-control-height);
+    border-radius: var(--radius-md);
+}
+.date-picker-custom :deep(.dp__input:focus) {
+    border-color: var(--form-input-focus-border) !important;
+    box-shadow: 0 0 0 2px var(--form-input-focus-ring) !important;
+}
+
+/* Smaller form inputs for payment section */
+.form-input-sm {
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+    padding-left: 0.6rem;
+    padding-right: 0.6rem;
+    font-size: 0.875rem; /* text-sm */
+    height: auto; /* Adjust height based on padding */
+}
+
+.form-select-sm {
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+    padding-left: 0.6rem;
+    padding-right: 1.75rem; /* Space for arrow */
+    font-size: 0.875rem; /* text-sm */
+    height: auto; /* Adjust height based on padding */
+    background-position: right 0.5rem center;
+}
+
+.btn-xs {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem; /* text-xs */
+}
+
+.btn-icon.btn-xs {
+    padding: 0.375rem; /* Slightly more padding for icon buttons if needed */
 }
 </style>
