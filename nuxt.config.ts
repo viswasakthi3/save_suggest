@@ -15,6 +15,23 @@ export default defineNuxtConfig({
   },
   css: ["~/assets/css/tailwind.css", ],
   modules: ['@nuxtjs/tailwindcss', 'nuxt-gtag', '@nuxt/ui'],
+  fonts: {
+    provider: 'none',
+  },
+  nitro: {
+    esbuild: {
+      options: {
+        target: 'esnext',
+      },
+    },
+  },
+  vite: {
+    resolve: {
+      alias: {
+        'form-data': 'form-data/lib/form_data.js',
+      },
+    },
+  },
   
   
   

@@ -26,7 +26,7 @@
     "metascraper-logo-favicon": "^5.45.22",
     "metascraper-title": "^5.45.22",
     "metascraper-url": "^5.45.22",
-    "nuxt": "^3.13.0",
+    "nuxt": "^3.17.7",
     "nuxt-gtag": "^3.0.1",
     "tailgrids": "^2.3.0",
     "tailwindcss": "^3.3.3",
@@ -40,6 +40,7 @@
     "postcss": "^8.4.45"
   },
   "overrides": {
+    "psl": "^1.15.0",
     "punycode": "^2.3.1"
   }
 }
