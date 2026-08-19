@@ -5,7 +5,7 @@ export default defineNuxtConfig({
 
 
   devServer: {
-    port: 2052
+    port: 2095
   },
   runtimeConfig: {
     public: {

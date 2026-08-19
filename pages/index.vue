@@ -7,7 +7,7 @@
         class="flex items-center justify-center space-x-4 mb-5" 
         :class="{ 'logoandname': !!accessToken }"
       >
-        <img src="/img/save.png" class="w-12 h-auto">
+        <img :src="'/img/save.png'" class="w-12 h-auto" alt="Save Suggest">
 
         <a href="https://savesuggest.com" >
         <h1 class="text-4xl font-extrabold text-[#1A2421] dark:text-white">Save Suggest</h1> </a>
